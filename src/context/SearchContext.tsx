@@ -19,7 +19,8 @@ const SearchIndexContext = createContext<SearchIndexContextType>({
   setLastSearchQuery: () => {}
 })
 
-const basePath = process.env.BASE_PATH || '';
+// Use the environment variable
+const basePath = process.env.NODE_ENV === 'production' ? '/prodhab-search' : '';
 
 export function useSearchIndex() {
   return useContext(SearchIndexContext)
@@ -56,7 +57,8 @@ export function SearchProvider({ children }: SearchProviderProps) {
           }
         })
 
-        // Fetch search index data
+        // Updated to ensure basePath is included for production
+        console.log(`Fetching index from: ${basePath}/prodhab-index.json`);
         const response = await fetch(`${basePath}/prodhab-index.json`)
         const rawSearchData = await response.json()
         console.log(`Loaded ${rawSearchData.length} search items`)

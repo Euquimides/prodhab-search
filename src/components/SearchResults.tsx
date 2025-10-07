@@ -15,7 +15,7 @@ interface SearchItem {
   slug: string
   content: string  // Display content (readable_content)
   rawContent: string // Raw content for processing (no formatting)
-  raw_content?: string // Markdown formatted content from flexsearch-index.json
+  raw_content?: string // Markdown formatted content
   excerpt?: string
   date?: string
   description?: string
@@ -27,7 +27,7 @@ interface SearchItem {
   }
 }
 
-const basePath = process.env.BASE_PATH || '';
+const basePath = process.env.NODE_ENV === 'production' ? '/prodhab-search' : '';
 
 export function SearchResults({ query, limit = 25 }: SearchResultsProps) {
   const [results, setResults] = useState<SearchItem[]>([])
@@ -307,7 +307,7 @@ export function SearchResults({ query, limit = 25 }: SearchResultsProps) {
                     window.location.href = `${basePath}/jurisprudencia/ver`
                   } else {
                     // Fallback: fetch raw_content from the index file
-                    fetch('/flexsearch-index.json')
+                    fetch(`${basePath}/prodhab-index.json`)
                       .then(response => response.json())
                       .then(data => {
                         const item = data.find((item: { id: string | undefined }) => item.id === result.id);

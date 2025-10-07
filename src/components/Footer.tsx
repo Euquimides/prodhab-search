@@ -1,5 +1,5 @@
 export default function Footer() {
-  const basePath = process.env.BASE_PATH || '';
+  const basePath = process.env.NODE_ENV === 'production' ? '/prodhab-search' : '';
 
   return (
     <footer className="border-t border-neutral-200 bg-white dark:border-neutral-800 dark:bg-neutral-950">
