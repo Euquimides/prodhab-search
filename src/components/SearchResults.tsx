@@ -93,17 +93,14 @@ export function SearchResults({ query, limit = 25 }: SearchResultsProps) {
       // Get main search results
       const searchResults = index.search(query, limit); // Use the provided limit
       
-      // Use only the main search results since fuzzy search is causing type errors
-      // We'll improve the main search with our custom highlighting and ranking
       const combinedResults = searchResults;
       
       const endTime = performance.now();
       console.log(`Search completed in ${(endTime - startTime).toFixed(2)}ms`);
       console.log('Search results:', combinedResults.length);
       
-      // Use the preloaded search data instead of fetching it again
-        // Normalize the search data to our expected format
-        // Always use readable_content for display, but we're indexing with raw content
+      // Normalize the search data to our expected format
+      // Always use readable_content for display
         const normalizedData: SearchItem[] = searchData.map((item: any) => ({
           id: item.id || '',
           title: item.title || 'Untitled',
