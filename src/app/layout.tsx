@@ -1,38 +1,41 @@
-import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
-import "./globals.css";
-import { SearchProvider } from "@/context/SearchContext";
+// app/layout.tsx
+import { SearchProvider } from '@/context/SearchContext'
+import './globals.css'
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
+const basePath = process.env.NODE_ENV === 'production' ? '/prodhab-search' : '';
 
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
-
-export const metadata: Metadata = {
-  title: "PRODHAB | Buscador Jurisprudencia",
-  description: "Buscador de jurisprudencia sobre protección de datos personales en Costa Rica",
-  keywords: "PRODHAB, datos personales, jurisprudencia, Costa Rica, protección de datos",
-};
+export const metadata = {
+  title: 'Buscador PRODHAB',
+  description: 'Buscador de jurisprudencia de protección de datos personales',
+}
 
 export default function RootLayout({
   children,
-}: Readonly<{
-  children: React.ReactNode;
-}>) {
+}: {
+  children: React.ReactNode
+}) {
   return (
     <html lang="es">
-      <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
-      >
+      <head>
+        {/* Preload the search index - browser downloads immediately */}
+        <link
+          rel="preload"
+          href={`${basePath}/prodhab-index.json`}
+          as="fetch"
+          type="application/json"
+          crossOrigin="anonymous"
+        />
+        {/* Optional: Also preload with higher priority */}
+        <link
+          rel="prefetch"
+          href={`${basePath}/prodhab-index.json`}
+        />
+      </head>
+      <body>
         <SearchProvider>
           {children}
         </SearchProvider>
       </body>
     </html>
-  );
+  )
 }
