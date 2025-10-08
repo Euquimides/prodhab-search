@@ -1,4 +1,3 @@
-// app/layout.tsx
 import { SearchProvider } from '@/context/SearchContext'
 import './globals.css'
 

@@ -98,9 +98,11 @@ export function SearchProvider({ children }: SearchProviderProps) {
         // Build the index
         console.log('[SearchContext] Building FlexSearch index...');
         const searchIndex = new FlexSearch.Index({
-          tokenize: 'forward',
+          preset: 'performance',
+          tokenize: 'strict',    
           resolution: 9,
-          cache: 100,
+          cache: 100, // Cache up to 100 recent searches
+          fastupdate: true,
           encode: (str: string) => {
             return str
               .toLowerCase()
