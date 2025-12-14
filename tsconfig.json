@@ -34,7 +34,9 @@
     ".next/types/**/*.ts",
     "next-env.d.ts",
     "out/prodhab-search/types/**/*.ts",
-    ".next/dev/types/**/*.ts"
+    ".next/dev/types/**/*.ts",
+    "out/privatasearch/types/**/*.ts",
+    "out/privatasearch/dev/types/**/*.ts"
   ],
   "exclude": [
     "node_modules"
