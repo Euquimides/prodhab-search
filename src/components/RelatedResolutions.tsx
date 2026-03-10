@@ -174,11 +174,11 @@ export function RelatedResolutions({
                     <div className="h-1.5 w-full overflow-hidden rounded-full bg-neutral-200 dark:bg-neutral-700">
                       <div
                         className={`h-full transition-all ${
-                          item.similarity >= 0.9
+                          item.similarity >= 0.7
                             ? "bg-green-500"
-                            : item.similarity >= 0.75
+                            : item.similarity >= 0.6
                               ? "bg-blue-500"
-                              : item.similarity >= 0.6
+                              : item.similarity >= 0.4
                                 ? "bg-yellow-500"
                                 : "bg-neutral-400"
                         }`}

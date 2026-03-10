@@ -211,7 +211,7 @@ export function SearchResults({
           return (
             <article
               key={item.id}
-              className="group relative overflow-hidden rounded-xl border border-neutral-200 bg-white shadow-sm transition-all duration-300 hover:shadow-lg hover:scale-[1.01] dark:border-neutral-800 dark:bg-neutral-950 animate-slide-up"
+              className="group relative overflow-hidden rounded-xl border border-neutral-200 bg-white shadow-sm transition-all duration-300 hover:shadow-lg dark:border-neutral-800 dark:bg-neutral-950 animate-slide-up"
               style={{
                 animationDelay: `${index * 0.05}s`,
                 animationFillMode: "both",

@@ -131,9 +131,10 @@ export function findMostSimilar<T extends VectorItem>(
   return selected.map(({ item, similarity }) => ({ item, similarity }));
 }
 
+
 export function getSimilarityLabel(similarity: number): string {
   if (similarity >= 0.9) return 'Muy alta';
-  if (similarity >= 0.75) return 'Alta';
+  if (similarity >= 0.7) return 'Alta';
   if (similarity >= 0.6) return 'Media';
   if (similarity >= 0.4) return 'Baja';
   return 'Muy baja';
@@ -144,21 +145,21 @@ export function getSimilarityColor(similarity: number): {
   bg: string;
   border: string;
 } {
-  if (similarity >= 0.9) {
+  if (similarity >= 0.7) {
     return {
       text: 'text-green-700 dark:text-green-400',
       bg: 'bg-green-50 dark:bg-green-950',
       border: 'border-green-200 dark:border-green-800'
     };
   }
-  if (similarity >= 0.75) {
+  if (similarity >= 0.6) {
     return {
       text: 'text-blue-700 dark:text-blue-400',
       bg: 'bg-blue-50 dark:bg-blue-950',
       border: 'border-blue-200 dark:border-blue-800'
     };
   }
-  if (similarity >= 0.6) {
+  if (similarity >= 0.4) {
     return {
       text: 'text-yellow-700 dark:text-yellow-400',
       bg: 'bg-yellow-50 dark:bg-yellow-950',
