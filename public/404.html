@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <title>PrivataSearch</title>
+    <script>
+      // Redirects from GitHub Pages 404 back to the SPA.
+      // pathSegmentsToKeep = 1 for project sites hosted at /repo-name/
+      // Source: https://github.com/rafgraph/spa-github-pages
+      var pathSegmentsToKeep = 1;
+      var l = window.location;
+      l.replace(
+        l.protocol +
+          "//" +
+          l.hostname +
+          (l.port ? ":" + l.port : "") +
+          l.pathname
+            .split("/")
+            .slice(0, 1 + pathSegmentsToKeep)
+            .join("/") +
+          "/?/" +
+          l.pathname
+            .slice(1)
+            .split("/")
+            .slice(pathSegmentsToKeep)
+            .join("/")
+            .replace(/&/g, "~and~") +
+          (l.search
+            ? "&" + l.search.slice(1).replace(/&/g, "~and~")
+            : "") +
+          l.hash
+      );
+    </script>
+  </head>
+  <body>
+    Redirigiendo...
+  </body>
+</html>

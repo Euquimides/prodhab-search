@@ -2,14 +2,7 @@ import React, { useState } from "react";
 import { useSearchIndex, ResolutionItem } from "@/context/SearchContext";
 import { findMostSimilar } from "@/utils/semanticSimilarity";
 import { RelatedResolutions } from "./RelatedResolutions";
-import {
-  FileText,
-  Calendar,
-  Hash,
-  ChevronRight,
-  Sparkles,
-  Download,
-} from "lucide-react";
+import { FileText, Calendar, Download } from "lucide-react";
 
 interface SearchResultsProps {
   query: string;
@@ -39,12 +32,11 @@ export function SearchResults({
   const searchResults = React.useMemo(() => {
     if (!query) return [];
 
-    // If using FlexSearch, items are already filtered by the context
     if (useFlexSearch) {
       return filteredItems.slice(0, limit);
     }
 
-    // Fallback to basic search
+    // Fallback a búsqueda básica sin FlexSearch (filtrado por texto)
     const lowerQuery = query.toLowerCase();
     return filteredItems
       .filter(
@@ -93,11 +85,11 @@ export function SearchResults({
   // Si el índice no está listo, muestra pantalla de carga
   if (!indexReady) {
     return (
-      <div className="flex flex-col items-center justify-center rounded-lg border border-neutral-200 bg-white p-12 shadow-sm dark:border-neutral-800 dark:bg-neutral-900">
+      <div role="status" aria-live="polite" className="flex flex-col items-center justify-center rounded-lg border border-neutral-200 bg-white p-12 shadow-sm dark:border-neutral-800 dark:bg-neutral-900">
         <div className="relative mb-6">
           <div className="h-12 w-12 animate-spin rounded-full border-4 border-neutral-200 border-t-blue-600 dark:border-neutral-700 dark:border-t-blue-400"></div>
-          <div className="absolute inset-0 flex items-center justify-center">
-            <Sparkles className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+          <div className="absolute inset-0 flex items-center justify-center" aria-hidden="true">
+            <FileText className="h-5 w-5 text-blue-600 dark:text-blue-400" />
           </div>
         </div>
         <p className="text-base font-medium text-neutral-700 dark:text-neutral-300">
@@ -113,13 +105,13 @@ export function SearchResults({
   // Si no se está buscando, muestra mensaje inicial
   if (!isSearching) {
     return (
-      <div className="rounded-lg border border-neutral-200 bg-gradient-to-br from-blue-50 to-neutral-50 p-12 text-center dark:border-neutral-800 dark:from-neutral-900 dark:to-neutral-950">
-        <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-blue-100 dark:bg-blue-900/30">
+      <div className="rounded-lg border border-neutral-200 bg-neutral-50 p-12 text-center dark:border-neutral-800 dark:bg-neutral-900">
+        <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-blue-100 dark:bg-blue-900/30" aria-hidden="true">
           <FileText className="h-8 w-8 text-blue-600 dark:text-blue-400" />
         </div>
-        <h3 className="mb-2 text-lg font-semibold text-neutral-900 dark:text-neutral-100">
+        <h2 className="mb-2 text-lg font-semibold text-neutral-900 dark:text-neutral-100">
           Comienza tu búsqueda
-        </h3>
+        </h2>
         <p className="text-sm text-neutral-600 dark:text-neutral-400">
           Ingresa términos de búsqueda para encontrar resoluciones relevantes
         </p>
@@ -131,7 +123,7 @@ export function SearchResults({
   if (isSearching && searchResults.length === 0) {
     return (
       <div className="rounded-lg border border-neutral-200 bg-white p-12 text-center shadow-sm dark:border-neutral-800 dark:bg-neutral-900">
-        <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-neutral-100 dark:bg-neutral-800">
+        <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-neutral-100 dark:bg-neutral-800" aria-hidden="true">
           <svg
             className="h-8 w-8 text-neutral-400"
             fill="none"
@@ -146,14 +138,14 @@ export function SearchResults({
             />
           </svg>
         </div>
-        <h3 className="mb-2 text-lg font-semibold text-neutral-900 dark:text-neutral-100">
+        <h2 className="mb-2 text-lg font-semibold text-neutral-900 dark:text-neutral-100">
           No se encontraron resultados
-        </h3>
+        </h2>
         <p className="mb-1 text-neutral-600 dark:text-neutral-400">
           No hay coincidencias para{" "}
           <span className="font-semibold">"{query}"</span>
         </p>
-        <p className="text-sm text-neutral-500 dark:text-neutral-500">
+        <p className="text-sm text-neutral-500 dark:text-neutral-400">
           Intenta con otros términos o ajusta los filtros de búsqueda
         </p>
       </div>
@@ -162,48 +154,32 @@ export function SearchResults({
 
   return (
     <div className="space-y-4">
-      {/* Sumario de Resultados */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4 rounded-lg border border-neutral-200 bg-gradient-to-r from-blue-50 to-white p-4 shadow-sm dark:border-neutral-800 dark:from-neutral-900 dark:to-neutral-950">
-        <div className="flex items-center gap-3">
-          <div className="flex h-10 w-10 sm:h-10 sm:w-10 items-center justify-center rounded-full bg-blue-600 text-white shadow-sm flex-shrink-0">
-            <span className="text-lg font-bold">{searchResults.length}</span>
-          </div>
-          <div className="min-w-0">
-            <p className="text-sm font-semibold text-neutral-900 dark:text-neutral-100">
-              {searchResults.length === 1
-                ? "Resultado encontrado"
-                : "Resultados encontrados"}
-            </p>
-            <p className="text-xs text-neutral-500 dark:text-neutral-400 truncate max-w-[200px] sm:max-w-none">
-              Búsqueda: "{query}"
-            </p>
-          </div>
+      {/* Controles Expandir/Colapsar Todos */}
+      {searchResults.length > 0 && (
+        <div className="flex items-center justify-end gap-3">
+          <button
+            onClick={() =>
+              setExpandedResults(new Set(searchResults.map((item) => item.id)))
+            }
+            aria-label="Ver texto completo de todos los resultados"
+            className="py-2 -my-2 px-1 -mx-1 text-xs text-blue-600 hover:underline dark:text-blue-400 transition-colors"
+          >
+            Ver todos
+          </button>
+          <span className="text-neutral-300 dark:text-neutral-700" aria-hidden="true">·</span>
+          <button
+            onClick={() => setExpandedResults(new Set())}
+            aria-label="Colapsar texto de todos los resultados"
+            className="py-2 -my-2 px-1 -mx-1 text-xs text-neutral-500 hover:underline dark:text-neutral-400 transition-colors"
+          >
+            Colapsar todos
+          </button>
         </div>
-        {/* Botones Expandir/Colapsar Todos */}
-        {searchResults.length > 0 && (
-          <div className="flex gap-2 w-full sm:w-auto">
-            <button
-              onClick={() =>
-                setExpandedResults(
-                  new Set(searchResults.map((item) => item.id)),
-                )
-              }
-              className="flex-1 sm:flex-none rounded-md border border-blue-200 bg-blue-50 px-3 py-2 text-xs font-medium text-blue-700 hover:bg-blue-100 hover:shadow-sm active:scale-95 transition-all duration-200 dark:border-blue-800 dark:bg-blue-900/30 dark:text-blue-300 dark:hover:bg-blue-900/50"
-            >
-              Ver todos
-            </button>
-            <button
-              onClick={() => setExpandedResults(new Set())}
-              className="flex-1 sm:flex-none rounded-md border border-neutral-200 bg-neutral-50 px-3 py-2 text-xs font-medium text-neutral-700 hover:bg-neutral-200 hover:shadow-sm active:scale-95 transition-all duration-200 dark:border-neutral-700 dark:bg-neutral-900/30 dark:text-neutral-300 dark:hover:bg-neutral-800"
-            >
-              Colapsar todos
-            </button>
-          </div>
-        )}
-      </div>
+      )}
 
       {/* Cuadrícula de Resultados */}
       <div className="space-y-4">
+        <h2 className="sr-only">Resultados de búsqueda</h2>
         {searchResults.map((item, index) => {
           const isExpanded = expandedResults.has(item.id);
           const related = relatedItemsCache.get(item.id) || [];
@@ -211,38 +187,31 @@ export function SearchResults({
           return (
             <article
               key={item.id}
-              className="group relative overflow-hidden rounded-xl border border-neutral-200 bg-white shadow-sm transition-all duration-300 hover:shadow-lg dark:border-neutral-800 dark:bg-neutral-950 animate-slide-up"
+              className="group relative overflow-hidden rounded-xl border border-neutral-200 bg-white shadow-sm transition-all duration-300 hover:shadow-lg dark:border-neutral-800 dark:bg-neutral-900 animate-slide-up"
               style={{
-                animationDelay: `${index * 0.05}s`,
-                animationFillMode: "both",
+                animationDelay: `${Math.min(index, 4) * 0.05}s`,
               }}
             >
               {/* Acento de gradiente */}
-              <div className="absolute left-0 top-0 h-full w-1 bg-gradient-to-b from-blue-500 to-green-500"></div>
+              <div className="absolute left-0 top-0 h-full w-1 bg-blue-500" aria-hidden="true"></div>
 
               <div className="p-4 sm:p-6 pl-6 sm:pl-8">
-                {/* Encabezado con etiquetas */}
-                <div className="mb-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4">
-                  <div className="flex items-center gap-3">
-                    <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-blue-500 to-blue-600 text-sm font-bold text-white shadow-sm flex-shrink-0">
-                      {index + 1}
-                    </span>
-                  </div>
-
-                  {/* Botón de descarga minimalista - Arriba a la derecha */}
-                  {item.metadatos?.archivo_origen && (
+                {/* Botón descarga */}
+                {item.metadatos?.archivo_origen && (
+                  <div className="mb-3 flex justify-end">
                     <a
                       href={item.metadatos.archivo_origen}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 rounded-md border border-neutral-300 bg-white px-4 py-2.5 sm:px-3 sm:py-1.5 text-sm sm:text-xs font-medium text-neutral-700 transition-all duration-200 hover:bg-neutral-50 hover:border-neutral-400 hover:shadow-sm active:scale-95 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-300 dark:hover:bg-neutral-750 dark:hover:border-neutral-600"
+                      aria-label={`Descargar resolución${item.metadatos?.resolucion ? ": " + item.metadatos.resolucion : item.metadatos?.expediente ? " " + item.metadatos.expediente : ""}`}
+                      className="inline-flex items-center gap-1.5 rounded-md border border-neutral-300 bg-white px-3 py-2 sm:py-1.5 text-xs font-medium text-neutral-700 transition-all duration-200 hover:bg-neutral-50 hover:border-neutral-400 hover:shadow-sm active:scale-95 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-300 dark:hover:border-neutral-600"
                       title="Descargar Resolución"
                     >
-                      <Download className="h-4 w-4 sm:h-3.5 sm:w-3.5" />
+                      <Download className="h-3.5 w-3.5" aria-hidden="true" />
                       <span>Descargar</span>
                     </a>
-                  )}
-                </div>
+                  </div>
+                )}
 
                 {/* Etiquetas de Metadatos */}
                 <div className="mb-4 flex flex-wrap gap-2">
@@ -258,7 +227,7 @@ export function SearchResults({
                   )}
                   {item.metadatos?.fecha && (
                     <span className="rounded-md bg-neutral-100 px-2.5 py-1 text-xs font-medium text-neutral-700 dark:bg-neutral-800 dark:text-neutral-300 flex items-center gap-1.5">
-                      <Calendar className="h-3 w-3" />
+                      <Calendar className="h-3 w-3" aria-hidden="true" />
                       {item.metadatos.fecha}
                     </span>
                   )}
@@ -266,7 +235,8 @@ export function SearchResults({
 
                 <div className="mb-4 text-neutral-700 dark:text-neutral-300">
                   <p
-                    className={`text-sm sm:text-base leading-relaxed ${
+                    id={`card-text-${item.id}`}
+                    className={`text-sm sm:text-base leading-relaxed break-words ${
                       !isExpanded ? "line-clamp-3" : ""
                     }`}
                   >
@@ -276,7 +246,9 @@ export function SearchResults({
                   {item.texto.length > 300 && (
                     <button
                       onClick={() => toggleExpanded(item.id)}
-                      className="mt-3 px-3 py-1.5 rounded-md text-sm font-medium text-blue-600 hover:text-blue-700 hover:bg-blue-50 hover:shadow-sm active:scale-95 transition-all duration-200 dark:text-blue-400 dark:hover:text-blue-300 dark:hover:bg-blue-900/20"
+                      aria-expanded={isExpanded}
+                      aria-controls={`card-text-${item.id}`}
+                      className="mt-1 py-2 -my-2 px-1 -mx-1 inline-flex text-sm font-medium text-blue-600 hover:underline dark:text-blue-400 transition-colors"
                     >
                       {isExpanded ? "Ver menos" : "Ver más"}
                     </button>
