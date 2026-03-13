@@ -1,13 +1,11 @@
 /**
- * Calcular similutud coseno entre dos vectores.
+ * Calcular similitud coseno entre dos vectores.
  * @param vecA Primer vector.
  * @param vecB Segundo vector.
  * @returns Similitud coseno entre los dos vectores.
  */
 export function cosineSimilarity(vecA: number[], vecB: number[]): number {
-  if (vecA.length !== vecB.length) {
-    return 0;
-  }
+  if (vecA.length !== vecB.length) return 0;
 
   let dot = 0;
   let normA = 0;
@@ -19,11 +17,10 @@ export function cosineSimilarity(vecA: number[], vecB: number[]): number {
     normB += vecB[i] * vecB[i];
   }
 
-  // Si el denominador es cero, retornar similitud 0
   if (dot === 0) return 0;
-
-  const denominator = Math.sqrt(normA) * Math.sqrt(normB);
-  return denominator === 0 ? 0 : dot / denominator;
+  // Single sqrt instead of two: sqrt(a) * sqrt(b) == sqrt(a * b)
+  const denom = Math.sqrt(normA * normB);
+  return denom === 0 ? 0 : dot / denom;
 }
 
 interface VectorItem {
@@ -50,20 +47,46 @@ export function findMostSimilar<T extends VectorItem>(
   diversityFactor: number = 0.5,
   threshold: number = 0.5
 ): Array<{ item: T; similarity: number }> {
-  
+
   if (!targetEmbedding || !items?.length) return [];
 
-  // 1. Calcular similitudes iniciales
+  // Pre-computar normas de vectores para eficiencia en similitud coseno y MMR
+  const normCache = new Map<number[], number>();
+  const getMagnitude = (v: number[]): number => {
+    let n = normCache.get(v);
+    if (n === undefined) {
+      let sq = 0;
+      for (let i = 0; i < v.length; i++) sq += v[i] * v[i];
+      n = Math.sqrt(sq);
+      normCache.set(v, n);
+    }
+    return n;
+  };
+
+  // Producto punto entre dos vectores
+  const dotProduct = (a: number[], b: number[]): number => {
+    let d = 0;
+    for (let i = 0; i < a.length; i++) d += a[i] * b[i];
+    return d;
+  };
+
+  const cachedCos = (a: number[], b: number[]): number => {
+    const na = getMagnitude(a);
+    const nb = getMagnitude(b);
+    if (na === 0 || nb === 0) return 0;
+    const d = dotProduct(a, b);
+    if (d === 0) return 0;
+    return d / (na * nb);
+  };
+
+  // 1. Calcular similitudes iniciales (norms cached here, reused in MMR)
   const candidates: ScoredItem<T>[] = [];
 
   for (const item of items) {
     const vec = item.vector || item.embedding;
-    
-    // Omitir vectores inválidos o con longitudes diferentes
     if (!vec || vec.length !== targetEmbedding.length) continue;
 
-    const similarity = cosineSimilarity(targetEmbedding, vec);
-    
+    const similarity = cachedCos(targetEmbedding, vec);
     if (similarity >= threshold) {
       candidates.push({ item, similarity, vector: vec });
     }
@@ -81,32 +104,29 @@ export function findMostSimilar<T extends VectorItem>(
 
   // 4. Preparación MMR
   // Limitar el tamaño del conjunto para evitar O(N^2) en conjuntos de datos masivos
-  const poolLimit = Math.min(candidates.length, topN * 4); 
+  const poolLimit = Math.min(candidates.length, topN * 4);
   const pool = candidates.slice(0, poolLimit);
   const selected: ScoredItem<T>[] = [];
 
-  // 5. Bucle MMR
+  // 5. Bucle MMR — all norms already cached from step 1, zero additional sqrt calls
   while (selected.length < topN && pool.length > 0) {
     let bestScore = -Infinity;
     let bestIdx = -1;
 
     for (let i = 0; i < pool.length; i++) {
       const candidate = pool[i];
-      
+
       // Calcular Redundancia: Máxima similitud con cualquier elemento ya seleccionado
       let maxSimToSelected = 0;
-      
       for (const selectedItem of selected) {
-        const sim = cosineSimilarity(candidate.vector, selectedItem.vector);
-        if (sim > maxSimToSelected) {
-          maxSimToSelected = sim;
-        }
+        const sim = cachedCos(candidate.vector, selectedItem.vector);
+        if (sim > maxSimToSelected) maxSimToSelected = sim;
       }
 
       // Ecuación MMR: Lambda * Relevancia - (1 - Lambda) * Redundancia
-      // Confiamos en diversityFactor para equilibrar esto.
-      const mmrScore = (diversityFactor * candidate.similarity) - 
-                       ((1 - diversityFactor) * maxSimToSelected);
+      const mmrScore =
+        diversityFactor * candidate.similarity -
+        (1 - diversityFactor) * maxSimToSelected;
 
       if (mmrScore > bestScore) {
         bestScore = mmrScore;
@@ -115,16 +135,12 @@ export function findMostSimilar<T extends VectorItem>(
     }
 
     if (bestIdx !== -1) {
-      // Agregar el mejor candidato a seleccionado
       selected.push(pool[bestIdx]);
-      
       // Eliminación eficiente de array (Swap-Pop)
-      // Reemplazar el elemento encontrado con el último, luego eliminar el último.
-      // El orden no importa en el bucle del conjunto.
       pool[bestIdx] = pool[pool.length - 1];
       pool.pop();
     } else {
-      break; 
+      break;
     }
   }
 

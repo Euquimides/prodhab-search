@@ -1,5 +1,8 @@
 @import "tailwindcss";
 
+/* Use class-based dark mode so the toggle works */
+@variant dark (&:where(.dark, .dark *));
+
 /* Smooth scrolling global */
 html {
   scroll-behavior: smooth;
@@ -8,26 +11,24 @@ html {
 :root {
   --background: #ffffff;
   --foreground: #171717;
+  --slider-track-empty: rgb(229 231 235);
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+.dark {
+  --background: #0a0a0a;
+  --foreground: #ededed;
+  --slider-track-empty: rgb(64 64 64);
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-sans, Inter, system-ui, sans-serif);
 }
 
 /* Animaciones personalizadas */
@@ -73,23 +74,6 @@ body {
   }
 }
 
-@keyframes shimmer {
-  0% {
-    background-position: -1000px 0;
-  }
-  100% {
-    background-position: 1000px 0;
-  }
-}
-
-@keyframes pulse {
-  0%, 100% {
-    opacity: 1;
-  }
-  50% {
-    opacity: 0.5;
-  }
-}
 
 /* Clases de utilidad para animaciones */
 .animate-fade-in {
@@ -111,4 +95,16 @@ body {
 /* Transiciones suaves globales */
 * {
   transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Reducir movimiento para usuarios sensibles al movimiento */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }

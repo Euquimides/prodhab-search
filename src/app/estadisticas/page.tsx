@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useMemo } from "react";
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -16,13 +16,13 @@ import {
 } from "chart.js";
 import { Bar, Line, Scatter, Doughnut } from "react-chartjs-2";
 import Footer from "@/components/Footer";
+import { DarkModeToggle } from "@/components/DarkModeToggle";
 import {
   calculateStatistics,
   DatasetStatistics,
   Dataset,
 } from "@/utils/statisticsCalculator";
 
-// Register Chart.js components
 ChartJS.register(
   // Registrar los componentes de Chart.js
   CategoryScale,
@@ -37,7 +37,6 @@ ChartJS.register(
   Filler,
 );
 
-// Chart color palette
 const colors = {
   // Paleta de colores para los gráficos
   primary: "rgba(59, 130, 246, 0.8)",
@@ -83,14 +82,14 @@ interface StatCardProps {
 function StatCard({ title, value, subtitle }: StatCardProps) {
   return (
     <div className="bg-white dark:bg-neutral-900 rounded-xl shadow-sm border border-neutral-200 dark:border-neutral-800 p-4 sm:p-6">
-      <h3 className="text-sm font-medium text-neutral-500 dark:text-neutral-400">
+      <h3 className="text-xs sm:text-sm font-medium text-neutral-500 dark:text-neutral-400 truncate">
         {title}
       </h3>
-      <p className="mt-2 text-2xl sm:text-3xl font-bold text-neutral-900 dark:text-neutral-100">
+      <p className="mt-2 text-xl sm:text-2xl lg:text-3xl font-bold text-neutral-900 dark:text-neutral-100 break-words">
         {value}
       </p>
       {subtitle && (
-        <p className="mt-1 text-xs sm:text-sm text-neutral-500 dark:text-neutral-400">
+        <p className="mt-1 text-xs text-neutral-500 dark:text-neutral-400 truncate">
           {subtitle}
         </p>
       )}
@@ -121,6 +120,19 @@ export default function EstadisticasPage() {
   const [stats, setStats] = useState<DatasetStatistics | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isDark, setIsDark] = useState(false);
+
+  useEffect(() => {
+    const update = () =>
+      setIsDark(document.documentElement.classList.contains("dark"));
+    update();
+    const observer = new MutationObserver(update);
+    observer.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ["class"],
+    });
+    return () => observer.disconnect();
+  }, []);
 
   const loadData = useCallback(async () => {
     try {
@@ -145,9 +157,9 @@ export default function EstadisticasPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-neutral-50 dark:bg-neutral-950 flex items-center justify-center">
+      <div role="status" aria-live="polite" className="min-h-screen bg-neutral-50 dark:bg-neutral-950 flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
+          <div className="h-12 w-12 animate-spin rounded-full border-4 border-neutral-200 border-t-blue-600 dark:border-neutral-700 dark:border-t-blue-400 mx-auto mb-4"></div>
           <p className="text-neutral-600 dark:text-neutral-400">
             Calculando estadísticas...
           </p>
@@ -159,11 +171,11 @@ export default function EstadisticasPage() {
   if (error) {
     return (
       <div className="min-h-screen bg-neutral-50 dark:bg-neutral-950 flex items-center justify-center">
-        <div className="text-center">
-          <p className="text-red-500 mb-4">{error}</p>
+        <div className="rounded-lg border border-red-200 bg-red-50 p-6 text-center dark:border-red-800 dark:bg-red-900/30">
+          <p className="font-medium text-red-700 dark:text-red-300 mb-4">{error}</p>
           <button
             onClick={loadData}
-            className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
+            className="px-4 py-2 rounded-lg bg-blue-600 text-white text-sm font-medium hover:bg-blue-700 transition-colors"
           >
             Reintentar
           </button>
@@ -174,7 +186,10 @@ export default function EstadisticasPage() {
 
   if (!stats) return null;
 
-  // Prepare chart data
+  // Theme-aware chart colors
+  const gridColor = isDark ? "rgba(255,255,255,0.07)" : "rgba(0,0,0,0.05)";
+  const tickColor = isDark ? "#a3a3a3" : "#737373";
+
   const yearsKeys = Object.keys(stats.recordsPerYear).sort();
   // Preparar datos para los gráficos
   const recordsPerYearData = {
@@ -236,7 +251,7 @@ export default function EstadisticasPage() {
       })()
     : null;
 
-  // Scatter plot data for clustering visualization
+  // Scatter plot 
   const scatterData = stats.clusterAnalysis
     ? (() => {
         // Datos para el diagrama de dispersión de la visualización de clústeres
@@ -273,13 +288,13 @@ export default function EstadisticasPage() {
   const chartOptions = {
     responsive: true,
     maintainAspectRatio: false,
-    // Opciones generales para los gráficos
     plugins: {
       legend: {
         position: "bottom" as const,
         labels: {
           padding: 20,
           usePointStyle: true,
+          color: tickColor,
         },
       },
     },
@@ -288,17 +303,14 @@ export default function EstadisticasPage() {
   const barOptions = {
     ...chartOptions,
     scales: {
-      // Opciones para gráficos de barras
       y: {
         beginAtZero: true,
-        grid: {
-          color: "rgba(0, 0, 0, 0.05)",
-        },
+        grid: { color: gridColor },
+        ticks: { color: tickColor },
       },
       x: {
-        grid: {
-          display: false,
-        },
+        grid: { display: false },
+        ticks: { color: tickColor },
       },
     },
   };
@@ -306,28 +318,22 @@ export default function EstadisticasPage() {
   const scatterOptions = {
     responsive: true,
     maintainAspectRatio: false,
-    // Opciones para el diagrama de dispersión
     plugins: {
       legend: {
         position: "bottom" as const,
         labels: {
           padding: 20,
           usePointStyle: true,
+          color: tickColor,
         },
       },
       tooltip: {
         callbacks: {
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           label: function (context: any) {
-            // Etiqueta personalizada para el tooltip del scatter plot
-            const point = context.raw as {
-              expediente?: string;
-              resolucion?: string;
-            };
+            const point = context.raw as { expediente?: string };
             return [
               `${context.dataset.label}`,
               `Expediente: ${point.expediente || "N/A"}`,
-              `Resolución: ${point.resolucion || "N/A"}`,
             ];
           },
         },
@@ -335,29 +341,24 @@ export default function EstadisticasPage() {
     },
     scales: {
       x: {
-        title: {
-          display: true,
-          text: "Componente Principal 1",
-        },
-        grid: {
-          color: "rgba(0, 0, 0, 0.05)",
-        },
+        title: { display: true, text: "Componente Principal 1", color: tickColor },
+        grid: { color: gridColor },
+        ticks: { color: tickColor },
       },
       y: {
-        title: {
-          display: true,
-          text: "Componente Principal 2",
-        },
-        grid: {
-          color: "rgba(0, 0, 0, 0.05)",
-        },
+        title: { display: true, text: "Componente Principal 2", color: tickColor },
+        grid: { color: gridColor },
+        ticks: { color: tickColor },
       },
     },
   };
 
   return (
     <div className="min-h-screen bg-neutral-50 dark:bg-neutral-950 flex flex-col">
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 py-8 sm:py-12 flex-1 w-full">
+      <div className="flex justify-end px-4 sm:px-6 pt-4 sm:pt-6">
+        <DarkModeToggle />
+      </div>
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 py-6 sm:py-8 flex-1 w-full">
         {/* Header */}
         <div className="mb-8 sm:mb-12">
           <a
@@ -379,7 +380,7 @@ export default function EstadisticasPage() {
           <h2 className="text-xl font-semibold text-neutral-900 dark:text-neutral-100 mb-4">
             Métricas Principales
           </h2>
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
+          <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-5 gap-4">
             <StatCard
               title="Total de Registros"
               value={stats.totalRecords.toLocaleString()}
@@ -450,7 +451,7 @@ export default function EstadisticasPage() {
             </p>
 
             {/* Clustering summary cards */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
               <StatCard
                 title="Grupos de Similitud"
                 value={stats.clusterAnalysis.numClusters}
@@ -507,15 +508,16 @@ export default function EstadisticasPage() {
                       options={{
                         ...barOptions,
                         scales: {
-                          ...barOptions.scales,
                           x: {
                             stacked: true,
                             grid: { display: false },
+                            ticks: { color: tickColor },
                           },
                           y: {
                             stacked: true,
                             beginAtZero: true,
-                            grid: { color: "rgba(0, 0, 0, 0.05)" },
+                            grid: { color: gridColor },
+                            ticks: { color: tickColor },
                           },
                         },
                       }}
@@ -579,7 +581,7 @@ export default function EstadisticasPage() {
                           <td className="py-2 px-3">
                             <div className="h-2 bg-neutral-200 dark:bg-neutral-700 rounded-full overflow-hidden w-32">
                               <div
-                                className="h-full rounded-full transition-all"
+                                className="h-full rounded-full"
                                 style={{
                                   width: `${percentage}%`,
                                   backgroundColor: colors.palette[colorIndex],

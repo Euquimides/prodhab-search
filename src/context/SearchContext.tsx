@@ -49,6 +49,8 @@ export const SearchProvider: React.FC<{ children: React.ReactNode }> = ({
   const [allItems, setAllItems] = useState<ResolutionItem[]>([]);
   const [error, setError] = useState<string | null>(null);
   const indexRef = useRef<any>(null);
+  // O(1) id→item lookup; evita iterar sobre todos los items para resolver resultados de búsqueda
+  const itemMapRef = useRef<Map<string, ResolutionItem>>(new Map());
 
   // Cargar datos e inicializar índice FlexSearch
   useEffect(() => {
@@ -68,6 +70,7 @@ export const SearchProvider: React.FC<{ children: React.ReactNode }> = ({
           throw new Error("No se encontraron resoluciones en el índice");
         }
 
+        itemMapRef.current = new Map(items.map((item) => [item.id, item]));
         setAllItems(items);
         // Construir índice de documentos FlexSearch
         const idx = new FlexSearch.Document({
@@ -94,7 +97,7 @@ export const SearchProvider: React.FC<{ children: React.ReactNode }> = ({
             ? err.message
             : "Error desconocido al cargar datos";
         setError(message);
-        setIndexReady(true); // Allow UI to render even on error
+        setIndexReady(true);
         console.error("Error loading search index:", err);
       }
     }
@@ -108,16 +111,22 @@ export const SearchProvider: React.FC<{ children: React.ReactNode }> = ({
         setSearchResults([]);
         return;
       }
-      // La búsqueda de documentos FlexSearch devuelve un array de objetos con el campo result
-      let results = indexRef.current.search(query, { limit });
-      if (Array.isArray(results)) {
-        results = results.flatMap((r: any) => r.result || []);
+      // FlexSearch Document devuelve un array de resultados por cada campo indexado.
+      const raw: { result: string[] }[] = indexRef.current.search(query, { limit });
+      const seen = new Set<string>();
+      const found: ResolutionItem[] = [];
+      for (const field of raw) {
+        for (const id of field.result) {
+          if (!seen.has(id)) {
+            seen.add(id);
+            const item = itemMapRef.current.get(id);
+            if (item) found.push(item);
+          }
+        }
       }
-      // Mapear ids a items
-      const found = allItems.filter((item) => results.includes(item.id));
       setSearchResults(found);
     },
-    [allItems],
+    [],
   );
 
   return (

@@ -1,8 +1,11 @@
 "use client";
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { useSearchIndex } from "@/context/SearchContext";
 import { SearchConfigPanel } from "./SearchConfigPanel";
 import { SearchResults } from "./SearchResults";
+
+const HISTORY_KEY = "ps_search_history";
+const MAX_HISTORY = 8;
 
 // Hook de debounce personalizado
 function useDebounce<T>(value: T, delay: number): T {
@@ -25,10 +28,47 @@ export default function SearchClient() {
   const [similarityThreshold, setSimilarityThreshold] = useState(0.5);
   const [relatedLimit, setRelatedLimit] = useState(5);
   const [isSticky, setIsSticky] = useState(false);
+  const [yearFrom, setYearFrom] = useState<number | null>(null);
+  const [yearTo, setYearTo] = useState<number | null>(null);
+  const [searchHistory, setSearchHistory] = useState<string[]>([]);
+  const [showHistory, setShowHistory] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const historyRef = useRef<HTMLDivElement>(null);
   const { allItems, search, searchResults, error } = useSearchIndex();
+
+  // Load search history from localStorage on mount
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem(HISTORY_KEY);
+      if (stored) setSearchHistory(JSON.parse(stored));
+    } catch {}
+  }, []);
 
   // Debounce de la consulta de búsqueda (300ms)
   const debouncedQuery = useDebounce(query, 300);
+
+  // Computar años disponibles para los filtros de fecha
+  const availableYears = useMemo(() => {
+    const years = new Set<number>();
+    allItems.forEach((item) => {
+      const year = item.metadatos?.fecha?.split("/")[2];
+      if (year) years.add(parseInt(year));
+    });
+    return Array.from(years).sort();
+  }, [allItems]);
+
+  // Filtrar resultados por año usando useMemo para evitar cálculos innecesarios
+  const dateFilteredResults = useMemo(() => {
+    if (!yearFrom && !yearTo) return searchResults;
+    return searchResults.filter((item) => {
+      const year = item.metadatos?.fecha?.split("/")[2];
+      if (!year) return true;
+      const y = parseInt(year);
+      if (yearFrom && y < yearFrom) return false;
+      if (yearTo && y > yearTo) return false;
+      return true;
+    });
+  }, [searchResults, yearFrom, yearTo]);
 
   // Detectar scroll para aplicar sticky
   useEffect(() => {
@@ -45,14 +85,49 @@ export default function SearchClient() {
     search(debouncedQuery, limit);
   }, [debouncedQuery, limit, search]);
 
+  // Sincronizar el historial de búsqueda con localStorage y mantener solo las últimas N entradas únicas
+  useEffect(() => {
+    if (!debouncedQuery.trim()) return;
+    setSearchHistory((prev) => {
+      const next = [
+        debouncedQuery,
+        ...prev.filter((q) => q !== debouncedQuery),
+      ].slice(0, MAX_HISTORY);
+      try {
+        localStorage.setItem(HISTORY_KEY, JSON.stringify(next));
+      } catch {}
+      return next;
+    });
+  }, [debouncedQuery]);
+
+  // Close history dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (
+        historyRef.current &&
+        !historyRef.current.contains(e.target as Node) &&
+        inputRef.current &&
+        !inputRef.current.contains(e.target as Node)
+      ) {
+        setShowHistory(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
   // Manejar atajos de teclado
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent<HTMLInputElement>) => {
       if (e.key === "Escape") {
-        setQuery("");
+        if (query) {
+          setQuery("");
+        } else {
+          setShowHistory(false);
+        }
       }
     },
-    [],
+    [query],
   );
 
   // Scroll suave al inicio
@@ -66,19 +141,11 @@ export default function SearchClient() {
   return (
     <div>
       {error && (
-        <div className="mb-4 rounded-lg border border-red-200 bg-red-50 p-4 text-red-700 dark:border-red-800 dark:bg-red-900/30 dark:text-red-300 animate-slide-down">
+        <div role="alert" className="mb-4 rounded-lg border border-red-200 bg-red-50 p-4 text-red-700 dark:border-red-800 dark:bg-red-900/30 dark:text-red-300 animate-slide-down">
           <p className="font-medium">Error al cargar datos</p>
           <p className="text-sm">{error}</p>
         </div>
       )}
-      <SearchConfigPanel
-        limit={limit}
-        setLimit={setLimit}
-        similarityThreshold={similarityThreshold}
-        setSimilarityThreshold={setSimilarityThreshold}
-        relatedLimit={relatedLimit}
-        setRelatedLimit={setRelatedLimit}
-      />
 
       {/* Sticky Search Bar */}
       <div
@@ -90,7 +157,7 @@ export default function SearchClient() {
       >
         {/* Indicador visual sutil cuando está sticky */}
         {isSticky && (
-          <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-blue-500 via-purple-500 to-blue-500 animate-fade-in" />
+          <div className="absolute bottom-0 left-0 right-0 h-px bg-neutral-200 dark:bg-neutral-800 animate-fade-in" />
         )}
 
         <div
@@ -120,15 +187,23 @@ export default function SearchClient() {
               </svg>
             </div>
             <input
+              ref={inputRef}
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               onKeyDown={handleKeyDown}
-              placeholder="Buscar resoluciones... (Esc para limpiar)"
-              className={`w-full pl-12 pr-12 md:pr-10 border rounded-lg text-base md:text-sm transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-neutral-900 dark:border-neutral-700 dark:text-neutral-100 ${
-                isSticky ? "py-1.5 md:py-1.5 shadow-sm" : "py-3 md:py-2"
-              }`}
+              onFocus={() => setShowHistory(true)}
+              placeholder="Buscar resoluciones..."
+              role="combobox"
+              aria-expanded={showHistory && !query && searchHistory.length > 0}
+              aria-haspopup="listbox"
+              aria-autocomplete="list"
+              aria-controls="search-history-listbox"
               aria-label="Buscar resoluciones"
               aria-describedby="search-hint"
+              autoComplete="off"
+              className={`w-full pl-12 pr-12 md:pr-10 border border-neutral-300 rounded-lg text-base md:text-sm transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-neutral-900 dark:border-neutral-700 dark:text-neutral-100 ${
+                isSticky ? "py-1.5 shadow-sm" : "py-3 md:py-2"
+              }`}
             />
             <span id="search-hint" className="sr-only">
               Presiona Escape para limpiar la búsqueda
@@ -136,9 +211,7 @@ export default function SearchClient() {
             {query && (
               <button
                 onClick={() => setQuery("")}
-                className={`absolute right-2 top-1/2 -translate-y-1/2 rounded-full text-neutral-400 hover:text-neutral-700 hover:bg-neutral-100 dark:hover:text-neutral-200 dark:hover:bg-neutral-800 focus:outline-none focus:ring-2 focus:ring-blue-500 active:scale-95 transition-all duration-200 ${
-                  isSticky ? "p-1" : "p-2 md:p-1.5"
-                }`}
+                className="absolute right-2 top-1/2 -translate-y-1/2 p-2 rounded-full text-neutral-400 hover:text-neutral-700 hover:bg-neutral-100 dark:hover:text-neutral-200 dark:hover:bg-neutral-800 focus:outline-none focus:ring-2 focus:ring-blue-500 active:scale-95 transition-all duration-200"
                 style={{ lineHeight: 0 }}
                 title="Limpiar búsqueda"
                 aria-label="Limpiar búsqueda"
@@ -160,35 +233,88 @@ export default function SearchClient() {
                 </svg>
               </button>
             )}
+
+            {/* Search history dropdown */}
+            {showHistory && !query && searchHistory.length > 0 && (
+              <div
+                ref={historyRef}
+                id="search-history-listbox"
+                role="listbox"
+                aria-label="Búsquedas recientes"
+                className="absolute top-full left-0 right-0 z-50 mt-1 overflow-hidden rounded-lg border border-neutral-200 bg-white shadow-lg dark:border-neutral-700 dark:bg-neutral-900 animate-slide-down"
+              >
+                <div className="flex items-center justify-between px-3 py-2 border-b border-neutral-100 dark:border-neutral-800">
+                  <span className="text-xs font-medium text-neutral-500 dark:text-neutral-400">
+                    Búsquedas recientes
+                  </span>
+                  <button
+                    onClick={() => {
+                      setSearchHistory([]);
+                      try { localStorage.removeItem(HISTORY_KEY); } catch {}
+                      setShowHistory(false);
+                    }}
+                    className="text-xs text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300 transition-colors px-2 py-1.5 -mr-1 rounded hover:bg-neutral-100 dark:hover:bg-neutral-800"
+                    aria-label="Borrar historial de búsquedas"
+                  >
+                    Borrar
+                  </button>
+                </div>
+                {searchHistory.map((h) => (
+                  <button
+                    key={h}
+                    role="option"
+                    aria-selected={false}
+                    onMouseDown={(e) => {
+                      e.preventDefault();
+                      setQuery(h);
+                      setShowHistory(false);
+                    }}
+                    className="flex w-full items-center gap-3 px-3 py-2.5 text-sm text-neutral-700 hover:bg-neutral-50 dark:text-neutral-300 dark:hover:bg-neutral-800 transition-colors text-left"
+                  >
+                    <svg className="h-3.5 w-3.5 text-neutral-400 flex-shrink-0" aria-hidden="true" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <span className="truncate">{h}</span>
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
           {query && (
-            <div
-              className={`flex items-center justify-between gap-2 ${isSticky ? "" : ""}`}
-            >
-              <p className="text-xs text-neutral-500 dark:text-neutral-400">
-                {searchResults.length} resultado
-                {searchResults.length !== 1 ? "s" : ""} encontrado
-                {searchResults.length !== 1 ? "s" : ""}
-              </p>
-              <button
-                type="button"
-                onClick={() => setQuery("")}
-                className={`rounded-md bg-neutral-100 text-neutral-700 text-xs font-medium hover:bg-neutral-200 dark:bg-neutral-800 dark:text-neutral-300 dark:hover:bg-neutral-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-all duration-200 active:scale-95 ${
-                  isSticky ? "px-2 py-1" : "px-3 py-1.5"
-                }`}
-              >
-                Limpiar
-              </button>
-            </div>
+            <p aria-live="polite" aria-atomic="true" className="text-xs text-neutral-500 dark:text-neutral-400 flex items-center gap-1.5">
+              {dateFilteredResults.length} resultado
+              {dateFilteredResults.length !== 1 ? "s" : ""} encontrado
+              {dateFilteredResults.length !== 1 ? "s" : ""}
+              {(yearFrom || yearTo) && (
+                <span className="rounded-full bg-blue-100 px-1.5 py-0.5 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300 font-medium">
+                  {yearFrom ?? "…"}–{yearTo ?? "…"}
+                </span>
+              )}
+            </p>
           )}
         </div>
       </div>
+
+      <SearchConfigPanel
+        limit={limit}
+        setLimit={setLimit}
+        similarityThreshold={similarityThreshold}
+        setSimilarityThreshold={setSimilarityThreshold}
+        relatedLimit={relatedLimit}
+        setRelatedLimit={setRelatedLimit}
+        yearFrom={yearFrom}
+        setYearFrom={setYearFrom}
+        yearTo={yearTo}
+        setYearTo={setYearTo}
+        availableYears={availableYears}
+      />
+
       <SearchResults
         query={debouncedQuery}
         limit={limit}
         similarityThreshold={similarityThreshold}
         relatedLimit={relatedLimit}
-        filteredItems={debouncedQuery.length > 0 ? searchResults : allItems}
+        filteredItems={debouncedQuery.length > 0 ? dateFilteredResults : allItems}
         isSearching={debouncedQuery.length > 0}
         useFlexSearch={debouncedQuery.length > 0}
       />

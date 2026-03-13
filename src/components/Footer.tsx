@@ -1,5 +1,4 @@
 export default function Footer() {
-  // For custom domain, logo should be at root
 
   return (
     <footer className="border-t border-neutral-200 bg-white dark:border-neutral-800 dark:bg-neutral-950">
@@ -14,9 +13,15 @@ export default function Footer() {
               className="transition-opacity hover:opacity-80"
             >
               <img
+                src="/logo_light.png"
+                alt="Vasquez Drexler — sitio web del autor"
+                className="h-12 sm:h-14 w-auto block dark:hidden"
+              />
+              <img
                 src="/logo.png"
-                alt="Logo"
-                className="h-20 sm:h-24 md:h-28 w-auto"
+                alt=""
+                aria-hidden="true"
+                className="h-12 sm:h-14 w-auto hidden dark:block"
               />
             </a>
             <a
@@ -29,7 +34,7 @@ export default function Footer() {
             </a>
           </div>
           <div className="mt-4 flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-3">
-            <p className="text-xs text-neutral-500 dark:text-neutral-500">
+            <p className="text-xs text-neutral-500 dark:text-neutral-400">
               © {new Date().getFullYear()} · Licencia MIT
             </p>
             <span className="hidden sm:inline text-neutral-300 dark:text-neutral-700">
@@ -37,7 +42,7 @@ export default function Footer() {
             </span>
             <a
               href="/estadisticas"
-              className="text-xs text-neutral-500 hover:underline dark:text-neutral-400"
+              className="py-2 -my-2 px-1 -mx-1 text-xs text-neutral-500 hover:underline dark:text-neutral-400"
             >
               Estadísticas
             </a>
@@ -46,7 +51,7 @@ export default function Footer() {
             </span>
             <a
               href="/disclaimer"
-              className="text-xs text-neutral-500 hover:underline dark:text-neutral-400"
+              className="py-2 -my-2 px-1 -mx-1 text-xs text-neutral-500 hover:underline dark:text-neutral-400"
             >
               Descargo de responsabilidad
             </a>
