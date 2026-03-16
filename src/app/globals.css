@@ -1,9 +1,8 @@
 @import "tailwindcss";
 
-/* Use class-based dark mode so the toggle works */
+/* Variantes para modo oscuro usando @variant de Tailwind */
 @variant dark (&:where(.dark, .dark *));
 
-/* Smooth scrolling global */
 html {
   scroll-behavior: smooth;
 }
@@ -11,7 +10,8 @@ html {
 :root {
   --background: #ffffff;
   --foreground: #171717;
-  --slider-track-empty: rgb(229 231 235);
+  --primary: rgb(37 99 235);
+  --slider-track-empty: rgb(229 229 229);
 }
 
 @theme inline {
@@ -22,6 +22,7 @@ html {
 .dark {
   --background: #0a0a0a;
   --foreground: #ededed;
+
   --slider-track-empty: rgb(64 64 64);
 }
 
@@ -92,8 +93,9 @@ body {
   animation: scaleIn 0.3s ease-out;
 }
 
-/* Transiciones suaves globales */
-* {
+/* Transiciones suaves — aplica solo a elementos interactivos y los que ya usan transition */
+a, button, input, select, textarea,
+[class*="transition"], [class*="animate"] {
   transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
 }
 

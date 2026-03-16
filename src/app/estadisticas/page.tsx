@@ -175,7 +175,7 @@ export default function EstadisticasPage() {
           <p className="font-medium text-red-700 dark:text-red-300 mb-4">{error}</p>
           <button
             onClick={loadData}
-            className="px-4 py-2 rounded-lg bg-blue-600 text-white text-sm font-medium hover:bg-blue-700 transition-colors"
+            className="px-4 py-2 rounded-lg bg-blue-600 text-white text-sm font-medium hover:bg-blue-700 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
           >
             Reintentar
           </button>
@@ -210,11 +210,11 @@ export default function EstadisticasPage() {
     ? {
         // Distribución del tamaño de los clústeres
         labels: stats.clusterAnalysis.clusters.map(
-          (c) => `Cluster ${c.id + 1}`,
+          (c) => `Grupo ${c.id + 1}`,
         ),
         datasets: [
           {
-            label: "Tamaño del Cluster",
+            label: "Tamaño del grupo",
             data: stats.clusterAnalysis.clusters.map((c) => c.size),
             backgroundColor: colors.palette,
             borderColor: colors.paletteBorder,
@@ -236,7 +236,7 @@ export default function EstadisticasPage() {
         return {
           labels: years,
           datasets: clusters.map((c, i) => ({
-            label: `Cluster ${c.id + 1}`,
+            label: `Grupo ${c.id + 1}`,
             data: years.map(
               (y) =>
                 stats.clusterAnalysis!.clusterDistributionOverTime[y]?.[
@@ -265,7 +265,7 @@ export default function EstadisticasPage() {
             (p) => p.clusterId === cluster.id,
           );
           return {
-            label: `Cluster ${cluster.id + 1}`,
+            label: `Grupo ${cluster.id + 1}`,
             data: clusterPoints.map((p) => ({
               x: p.x,
               y: p.y,
@@ -368,7 +368,7 @@ export default function EstadisticasPage() {
             ← Volver al buscador
           </a>
           <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold tracking-tight text-neutral-900 dark:text-neutral-100">
-            Estadísticas del Dataset
+            Estadísticas del conjunto de datos
           </h1>
           <p className="mt-2 text-neutral-600 dark:text-neutral-400">
             Análisis estadístico de las resoluciones de PRODHAB
@@ -455,17 +455,17 @@ export default function EstadisticasPage() {
               <StatCard
                 title="Grupos de Similitud"
                 value={stats.clusterAnalysis.numClusters}
-                subtitle="clusters identificados"
+                subtitle="grupos identificados"
               />
               <StatCard
                 title="Grupo Más Grande"
                 value={stats.clusterAnalysis.mostPopulated.size}
-                subtitle={`Cluster ${stats.clusterAnalysis.mostPopulated.clusterId + 1}`}
+                subtitle={`Grupo ${stats.clusterAnalysis.mostPopulated.clusterId + 1}`}
               />
               <StatCard
                 title="Grupo Más Pequeño"
                 value={stats.clusterAnalysis.leastPopulated.size}
-                subtitle={`Cluster ${stats.clusterAnalysis.leastPopulated.clusterId + 1}`}
+                subtitle={`Grupo ${stats.clusterAnalysis.leastPopulated.clusterId + 1}`}
               />
               <StatCard
                 title="Resoluciones Atípicas"
@@ -481,9 +481,9 @@ export default function EstadisticasPage() {
                 className="mb-6"
               >
                 <p className="text-xs text-neutral-500 dark:text-neutral-400 mb-4">
-                  Pase el cursor sobre los puntos para ver el expediente y
-                  resolución. Los colores representan grupos de resoluciones
-                  similares.
+                  Haga clic o pase el cursor sobre los puntos para ver el
+                  expediente y resolución. Los colores representan grupos de
+                  resoluciones similares.
                 </p>
                 <div className="h-96 sm:h-[500px]">
                   <Scatter data={scatterData} options={scatterOptions} />
@@ -535,16 +535,16 @@ export default function EstadisticasPage() {
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b border-neutral-200 dark:border-neutral-700">
-                    <th className="text-left py-2 px-3 text-neutral-600 dark:text-neutral-400">
+                    <th scope="col" className="text-left py-2 px-3 text-neutral-600 dark:text-neutral-400">
                       Grupo
                     </th>
-                    <th className="text-right py-2 px-3 text-neutral-600 dark:text-neutral-400">
+                    <th scope="col" className="text-right py-2 px-3 text-neutral-600 dark:text-neutral-400">
                       Resoluciones
                     </th>
-                    <th className="text-right py-2 px-3 text-neutral-600 dark:text-neutral-400">
+                    <th scope="col" className="text-right py-2 px-3 text-neutral-600 dark:text-neutral-400">
                       % del Total
                     </th>
-                    <th className="text-left py-2 px-3 text-neutral-600 dark:text-neutral-400">
+                    <th scope="col" className="text-left py-2 px-3 text-neutral-600 dark:text-neutral-400">
                       Distribución
                     </th>
                   </tr>
@@ -563,14 +563,14 @@ export default function EstadisticasPage() {
                           key={cluster.id}
                           className="border-b border-neutral-100 dark:border-neutral-800"
                         >
-                          <td className="py-2 px-3 font-medium text-neutral-900 dark:text-neutral-100">
+                          <td scope="row" className="py-2 px-3 font-medium text-neutral-900 dark:text-neutral-100">
                             <span
                               className="inline-block w-3 h-3 rounded-full mr-2"
                               style={{
                                 backgroundColor: colors.palette[colorIndex],
                               }}
                             />
-                            Cluster {cluster.id + 1}
+                            Grupo {cluster.id + 1}
                           </td>
                           <td className="py-2 px-3 text-right text-neutral-700 dark:text-neutral-300">
                             {cluster.size.toLocaleString()}

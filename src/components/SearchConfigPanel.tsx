@@ -1,5 +1,6 @@
 import React from "react";
-import { Settings, Filter, TrendingUp, Calendar } from "lucide-react";
+import { Settings, Filter, TrendingUp, Calendar, Tag, Highlighter } from "lucide-react";
+import { DESCRIPTOR_LABELS } from "@/context/SearchContext";
 
 interface SearchConfigPanelProps {
   limit: number;
@@ -13,6 +14,12 @@ interface SearchConfigPanelProps {
   yearTo: number | null;
   setYearTo: (value: number | null) => void;
   availableYears: number[];
+  selectedDescriptores: string[];
+  setSelectedDescriptores: (value: string[]) => void;
+  descriptorCounts: Record<string, number>;
+  highlightEnabled: boolean;
+  setHighlightEnabled: (value: boolean) => void;
+  isSearching: boolean;
 }
 
 export function SearchConfigPanel({
@@ -27,6 +34,12 @@ export function SearchConfigPanel({
   yearTo,
   setYearTo,
   availableYears,
+  selectedDescriptores,
+  setSelectedDescriptores,
+  descriptorCounts,
+  highlightEnabled,
+  setHighlightEnabled,
+  isSearching,
 }: SearchConfigPanelProps) {
   const [isExpanded, setIsExpanded] = React.useState(false);
 
@@ -36,10 +49,29 @@ export function SearchConfigPanel({
     setRelatedLimit(5);
     setYearFrom(null);
     setYearTo(null);
+    setSelectedDescriptores([]);
   };
 
+  const toggleDescriptor = (key: string) => {
+    setSelectedDescriptores(
+      selectedDescriptores.includes(key)
+        ? selectedDescriptores.filter((d) => d !== key)
+        : [...selectedDescriptores, key]
+    );
+  };
+
+  // Descriptores ordenados por frecuencia descendente, ocultando los que tienen 0 en búsquedas activas
+  const sortedDescriptores = React.useMemo(
+    () =>
+      Object.entries(DESCRIPTOR_LABELS)
+        .map(([key, label]) => ({ key, label, count: descriptorCounts[key] ?? 0 }))
+        .filter(({ count, key }) => count > 0 || selectedDescriptores.includes(key))
+        .sort((a, b) => b.count - a.count),
+    [descriptorCounts, selectedDescriptores],
+  );
+
   const hasActiveFilters =
-    limit !== 10 || similarityThreshold !== 0.5 || relatedLimit !== 5 || yearFrom !== null || yearTo !== null;
+    limit !== 10 || similarityThreshold !== 0.5 || relatedLimit !== 5 || yearFrom !== null || yearTo !== null || selectedDescriptores.length > 0;
 
   return (
     <div className="mb-4 sm:mb-6">
@@ -100,7 +132,7 @@ export function SearchConfigPanel({
               <div className="flex items-center gap-2 border-b border-neutral-200 pb-2 dark:border-neutral-700">
                 <Filter className="h-4 w-4 text-blue-600 dark:text-blue-400" />
                 <h3 className="text-sm font-semibold text-neutral-900 dark:text-neutral-100">
-                  Límites de resultados
+                  Límite de resultados por página
                 </h3>
               </div>
 
@@ -109,14 +141,14 @@ export function SearchConfigPanel({
                   htmlFor="result-limit"
                   className="mb-2 block text-sm font-medium text-neutral-700 dark:text-neutral-300"
                 >
-                  Resultados principales
+                  Resultados por página
                 </label>
                 <div className="relative">
                   <select
                     id="result-limit"
                     value={limit}
                     onChange={(e) => setLimit(Number(e.target.value))}
-                    className="w-full appearance-none rounded-lg border border-neutral-300 bg-white px-4 py-2.5 pr-10 text-sm transition-all duration-200 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 hover:border-blue-300 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-100 dark:hover:border-blue-700"
+                    className="w-full appearance-none rounded-lg border border-neutral-300 bg-white px-4 py-2.5 pr-10 text-sm font-[inherit] transition-all duration-200 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 hover:border-blue-300 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-100 dark:hover:border-blue-700"
                   >
                     <option value={5}>5 resultados</option>
                     <option value={10}>10 resultados</option>
@@ -153,7 +185,7 @@ export function SearchConfigPanel({
                     id="related-limit"
                     value={relatedLimit}
                     onChange={(e) => setRelatedLimit(Number(e.target.value))}
-                    className="w-full appearance-none rounded-lg border border-neutral-300 bg-white px-4 py-2.5 pr-10 text-sm transition-all duration-200 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 hover:border-blue-300 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-100 dark:hover:border-blue-700"
+                    className="w-full appearance-none rounded-lg border border-neutral-300 bg-white px-4 py-2.5 pr-10 text-sm font-[inherit] transition-all duration-200 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 hover:border-blue-300 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-100 dark:hover:border-blue-700"
                   >
                     <option value={3}>3 relacionadas</option>
                     <option value={5}>5 relacionadas</option>
@@ -210,7 +242,7 @@ export function SearchConfigPanel({
                   }
                   className="h-2 w-full cursor-pointer appearance-none rounded-full transition-all duration-200"
                   style={{
-                    background: `linear-gradient(to right, rgb(37 99 235) 0%, rgb(37 99 235) ${similarityThreshold * 100}%, var(--slider-track-empty) ${similarityThreshold * 100}%, var(--slider-track-empty) 100%)`,
+                    background: `linear-gradient(to right, var(--primary) 0%, var(--primary) ${similarityThreshold * 100}%, var(--slider-track-empty) ${similarityThreshold * 100}%, var(--slider-track-empty) 100%)`,
                   }}
                 />
                 <div className="mt-2 flex justify-between text-xs text-neutral-500">
@@ -244,7 +276,7 @@ export function SearchConfigPanel({
                     id="year-from"
                     value={yearFrom ?? ""}
                     onChange={(e) => setYearFrom(e.target.value ? Number(e.target.value) : null)}
-                    className="w-full appearance-none rounded-lg border border-neutral-300 bg-white px-3 py-2 pr-8 text-sm transition-all duration-200 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 hover:border-blue-300 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-100 dark:hover:border-blue-700"
+                    className="w-full appearance-none rounded-lg border border-neutral-300 bg-white px-3 py-2 pr-8 text-sm font-[inherit] transition-all duration-200 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 hover:border-blue-300 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-100 dark:hover:border-blue-700"
                   >
                     <option value="">Cualquier año</option>
                     {availableYears.map((y) => (
@@ -269,7 +301,7 @@ export function SearchConfigPanel({
                     id="year-to"
                     value={yearTo ?? ""}
                     onChange={(e) => setYearTo(e.target.value ? Number(e.target.value) : null)}
-                    className="w-full appearance-none rounded-lg border border-neutral-300 bg-white px-3 py-2 pr-8 text-sm transition-all duration-200 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 hover:border-blue-300 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-100 dark:hover:border-blue-700"
+                    className="w-full appearance-none rounded-lg border border-neutral-300 bg-white px-3 py-2 pr-8 text-sm font-[inherit] transition-all duration-200 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 hover:border-blue-300 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-100 dark:hover:border-blue-700"
                   >
                     <option value="">Cualquier año</option>
                     {availableYears.map((y) => (
@@ -286,6 +318,102 @@ export function SearchConfigPanel({
                 </div>
               </div>
             </div>
+          </div>
+
+          {/* Tema (Descriptor) — solo disponible después de una búsqueda */}
+          {isSearching && sortedDescriptores.length > 0 && (
+            <div className="mt-6 space-y-3 rounded-lg border border-neutral-100 bg-neutral-50 p-4 dark:border-neutral-800 dark:bg-neutral-950">
+              <div className="flex items-center gap-2 border-b border-neutral-200 pb-2 dark:border-neutral-700">
+                <Tag className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                <h3 className="text-sm font-semibold text-neutral-900 dark:text-neutral-100">
+                  Descriptor temático
+                </h3>
+                {selectedDescriptores.length > 0 && (
+                  <span className="ml-auto text-xs text-indigo-600 dark:text-indigo-400 font-medium">
+                    {selectedDescriptores.length} seleccionado{selectedDescriptores.length !== 1 ? "s" : ""}
+                  </span>
+                )}
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {sortedDescriptores.map(({ key, label, count }) => {
+                  const active = selectedDescriptores.includes(key);
+                  return (
+                    <button
+                      key={key}
+                      onClick={() => toggleDescriptor(key)}
+                      aria-pressed={active}
+                      className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-1 active:scale-95 ${
+                        active
+                          ? "border-indigo-500 bg-indigo-600 text-white shadow-sm dark:border-indigo-400 dark:bg-indigo-700"
+                          : "border-neutral-200 bg-white text-neutral-700 hover:border-indigo-300 hover:bg-indigo-50 hover:text-indigo-700 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-300 dark:hover:border-indigo-600 dark:hover:bg-indigo-900/30 dark:hover:text-indigo-300"
+                      }`}
+                    >
+                      <span>{label}</span>
+                      <span
+                        className={`rounded-full px-1.5 py-0.5 text-[10px] font-bold tabular-nums ${
+                          active
+                            ? "bg-white/20 text-white"
+                            : "bg-neutral-100 text-neutral-500 dark:bg-neutral-800 dark:text-neutral-400"
+                        }`}
+                      >
+                        {count}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+              <p className="text-[11px] text-neutral-400 dark:text-neutral-500">
+                Selecciona uno o más temas para filtrar resultados. Los conteos reflejan la búsqueda actual.
+              </p>
+            </div>
+          )}
+
+          {/* Resaltado de coincidencias */}
+          <div className="mt-6 rounded-lg border border-neutral-100 bg-neutral-50 p-4 dark:border-neutral-800 dark:bg-neutral-950">
+            <div className="flex items-center justify-between gap-4">
+              <div className="flex items-center gap-2 min-w-0">
+                <Highlighter className="h-4 w-4 flex-shrink-0 text-blue-600 dark:text-blue-400" />
+                <div className="min-w-0">
+                  <p className="text-sm font-semibold text-neutral-900 dark:text-neutral-100">
+                    Resaltado de coincidencias
+                  </p>
+                  <p className="text-xs text-neutral-500 dark:text-neutral-400">
+                    Marca los términos encontrados en el texto
+                  </p>
+                </div>
+              </div>
+              <button
+                role="switch"
+                aria-checked={highlightEnabled}
+                aria-label="Activar resaltado de coincidencias"
+                onClick={() => setHighlightEnabled(!highlightEnabled)}
+                className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer items-center rounded-full border-2 border-transparent transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-neutral-900 ${
+                  highlightEnabled ? "bg-blue-600" : "bg-neutral-300 dark:bg-neutral-600"
+                }`}
+              >
+                <span
+                  className={`inline-block h-4 w-4 transform rounded-full bg-white shadow-sm transition-transform duration-200 ${
+                    highlightEnabled ? "translate-x-5" : "translate-x-0"
+                  }`}
+                />
+              </button>
+            </div>
+            {highlightEnabled && (
+              <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1.5 border-t border-neutral-200 pt-3 dark:border-neutral-700">
+                <span className="flex items-center gap-1.5 text-xs text-neutral-600 dark:text-neutral-400">
+                  <mark className="rounded-sm bg-amber-200 px-1 text-amber-900 dark:bg-amber-700/60 dark:text-amber-100">
+                    Texto
+                  </mark>
+                  Búsqueda de texto
+                </span>
+                <span className="flex items-center gap-1.5 text-xs text-neutral-600 dark:text-neutral-400">
+                  <mark className="rounded-sm bg-indigo-200 px-1 text-indigo-900 dark:bg-indigo-700/60 dark:text-indigo-100">
+                    Texto
+                  </mark>
+                  Descriptor temático
+                </span>
+              </div>
+            )}
           </div>
 
           {/* Botones de acción */}

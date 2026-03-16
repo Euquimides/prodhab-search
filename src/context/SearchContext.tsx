@@ -9,6 +9,75 @@ import React, {
 } from "react";
 import FlexSearch from "flexsearch";
 
+// Vocabulario de descriptores temáticos para resoluciones PRODHAB (Costa Rica)
+export const DESCRIPTOR_LABELS: Record<string, string> = {
+  "consentimiento-informado": "Consentimiento informado",
+  "derecho-al-olvido": "Derecho al olvido",
+  "derecho-de-acceso": "Derecho de acceso",
+  "derecho-de-rectificacion": "Derecho de rectificación",
+  "derecho-de-supresion": "Derecho de supresión",
+  "autodeterminacion-informativa": "Autodeterminación informativa",
+  "datos-sensibles": "Datos sensibles",
+  "cesion-de-datos": "Cesión de datos",
+  "principio-de-finalidad": "Principio de finalidad",
+  "sector-financiero": "Sector financiero",
+  "sector-salud": "Sector salud",
+  "sector-laboral": "Sector laboral",
+  "gestion-de-cobro": "Gestión de cobro",
+  "habeas-data": "Habeas data",
+  "telecomunicaciones": "Telecomunicaciones",
+  "registro-bases-de-datos": "Registro de bases de datos",
+  "portabilidad-de-datos": "Portabilidad de datos",
+  "seguridad-de-los-datos": "Seguridad de los datos",
+  "minimizacion-de-datos": "Minimización de datos",
+  "transparencia": "Transparencia",
+  "responsable-del-tratamiento": "Responsable del tratamiento",
+  "menores-de-edad": "Personas menores de edad",
+  "datos-biometricos": "Datos biométricos",
+  "transferencia-internacional": "Transferencia internacional de datos",
+  "notificacion-de-brechas": "Notificación de brechas de seguridad",
+  "oposicion-al-tratamiento": "Oposición al tratamiento",
+  "datos-de-localizacion": "Datos de localización",
+  "datos-de-videovigilancia": "Datos de videovigilancia",
+};
+
+export const DESCRIPTOR_PATTERNS: [string, RegExp][] = [
+  ["consentimiento-informado", /consentimiento informado|consentimiento expreso|consentimiento del titular|autorizaci[oó]n expresa|permiso del titular|aceptaci[oó]n informada|manifestaci[oó]n de voluntad|consentimiento tácito|consentimiento escrito|consentimiento verbal/i],
+  ["derecho-al-olvido", /derecho al olvido|eliminaci[oó]n de informaci[oó]n|borrado de datos|supresi[oó]n de informaci[oó]n|retirar informaci[oó]n|derecho a ser olvidado/i],
+  ["derecho-de-acceso", /derecho de acceso|acceso a (sus|los) datos|solicitud de acceso|consulta de datos|ver mis datos|obtener informaci[oó]n personal|acceso a informaci[oó]n|acceso a expediente/i],
+  ["derecho-de-rectificacion", /derecho de rectificaci[oó]n|rectificaci[oó]n de datos|correcci[oó]n de datos|actualizaci[oó]n de informaci[oó]n|modificaci[oó]n de datos|rectificar informaci[oó]n|cambiar datos personales/i],
+  ["derecho-de-supresion", /derecho de supresi[oó]n|supresi[oó]n de datos|cancelaci[oó]n de datos|eliminaci[oó]n de datos|borrado de datos|derecho de cancelaci[oó]n|derecho de eliminaci[oó]n|suprimir informaci[oó]n/i],
+  ["autodeterminacion-informativa", /autodeterminaci[oó]n informativa|control sobre datos|libertad informativa|autonom[ií]a informativa|decisi[oó]n sobre informaci[oó]n personal|gesti[oó]n de datos propios/i],
+  ["datos-sensibles", /datos sensibles|datos de salud|informaci[oó]n m[eé]dica|expediente m[eé]dico|informaci[oó]n gen[eé]tica|orientaci[oó]n sexual|creencias religiosas|opiniones pol[ií]ticas|discapacidad|historial cl[ií]nico|diagn[oó]stico m[eé]dico/i],
+  ["cesion-de-datos", /cesi[oó]n de datos|transferencia de datos|comunicaci[oó]n de datos a terceros|compartir datos|entrega de informaci[oó]n|transmisi[oó]n de datos|divulgaci[oó]n de datos|acceso de terceros/i],
+  ["principio-de-finalidad", /principio de finalidad|adecuaci[oó]n al fin|fines determinados|fines leg[ií]timos|uso espec[ií]fico de datos|prop[oó]sito determinado|finalidad espec[ií]fica|limitaci[oó]n de finalidad/i],
+  ["sector-financiero", /\b(banco|financiero|cr[eé]dito|pr[eé]stamo|entidad financiera|SUGEF|Credomatic|BAC|BCR|BNCR|Coopeande|tarjeta de cr[eé]dito|cuenta bancaria|superintendencia financiera|asociaci[oó]n solidarista|cooperativa de ahorro)\b/i],
+  ["sector-salud", /\b(hospital|cl[ií]nica|m[eé]dico|salud|CCSS|Caja Costarricense|centro de salud|EBAIS|expediente cl[ií]nico|servicio de salud|enfermero|farmacia|laboratorio cl[ií]nico)\b/i],
+  ["sector-laboral", /\b(empleado|empleador|trabajador|contrato de trabajo|relaci[oó]n laboral|planilla|recursos humanos|n[oó]mina|jornada laboral|despido|contrataci[oó]n|liquidaci[oó]n laboral)\b/i],
+  ["gestion-de-cobro", /gesti[oó]n de cobro|cobro de deuda|llamadas de cobro|cobrador|agencia de cobro|recuperaci[oó]n de cartera|notificaci[oó]n de cobro|proceso de cobro|empresa de cobranza/i],
+  ["habeas-data", /habeas data|recurso de habeas data|acción de habeas data|solicitud de habeas data/i],
+  ["telecomunicaciones", /n[uú]mero de tel[eé]fono|correo electr[oó]nico|ICE|Kolbi|Movistar|Claro|datos de contacto|mensaje de texto|SMS|WhatsApp|operador telef[oó]nico|compa[nñ][ií]a telef[oó]nica|servicio de internet/i],
+  ["registro-bases-de-datos", /registro de (la )?base de datos|inscripci[oó]n de (la )?base de datos|registro de informaci[oó]n|inscripci[oó]n de archivos|registro ante la autoridad|registro de ficheros/i],
+  ["portabilidad-de-datos", /portabilidad de datos|derecho a la portabilidad|transferencia de informaci[oó]n|migraci[oó]n de datos|cambio de proveedor|traslado de datos|exportaci[oó]n de datos/i],
+  ["seguridad-de-los-datos", /seguridad de los datos|medidas de seguridad|protecci[oó]n de datos|cifrado de datos|acceso restringido|brecha de seguridad|seguridad inform[aá]tica|pol[ií]tica de seguridad|incidente de seguridad|vulnerabilidad de datos/i],
+  ["minimizacion-de-datos", /minimizaci[oó]n de datos|solo los datos necesarios|datos estrictamente necesarios|reducci[oó]n de datos|limitaci[oó]n de datos|minimizar informaci[oó]n|principio de minimizaci[oó]n/i],
+  ["transparencia", /transparencia|informaci[oó]n clara|acceso transparente|rendici[oó]n de cuentas|publicidad de informaci[oó]n|claridad informativa|informaci[oó]n accesible|comunicaci[oó]n transparente/i],
+  ["responsable-del-tratamiento", /responsable del tratamiento|responsable de los datos|encargado de los datos|titular del tratamiento|gestor de datos|administrador de datos|controlador de datos|data controller/i],
+  ["menores-de-edad", /menores de edad|niños|adolescentes|datos de menores|infancia|niñez|menor de edad|protecci[oó]n de menores|datos infantiles/i],
+  ["datos-biometricos", /datos biom[eé]tricos|huella dactilar|reconocimiento facial|iris|reconocimiento de voz|patr[oó]n biom[eé]trico|identificaci[oó]n biom[eé]trica|escaneo facial|lectura de retina/i],
+  ["transferencia-internacional", /transferencia internacional de datos|datos fuera del pa[ií]s|extranjero|env[ií]o internacional|transferencia transfronteriza|datos en el exterior|transferencia fuera del territorio/i],
+  ["notificacion-de-brechas", /notificaci[oó]n de brechas|incidente de seguridad|brecha de datos|reporte de brecha|aviso de incidente|comunicaci[oó]n de brecha|notificaci[oó]n de incidente|divulgaci[oó]n de brecha/i],
+  ["oposicion-al-tratamiento", /oposici[oó]n al tratamiento|derecho de oposici[oó]n|rechazo al tratamiento|negativa al tratamiento|oponerse al tratamiento|solicitud de oposici[oó]n|objeci[oó]n al tratamiento/i],
+  ["datos-de-localizacion", /datos de localizaci[oó]n|ubicaci[oó]n geogr[aá]fica|GPS|coordenadas|rastreo de ubicaci[oó]n|posicionamiento|informaci[oó]n de ubicaci[oó]n|localizaci[oó]n satelital/i],
+  ["datos-de-videovigilancia", /videovigilancia|c[aá]maras de seguridad|grabaci[oó]n de video|sistema de videovigilancia|circuito cerrado|CCTV|monitorizaci[oó]n visual|registro de im[aá]genes|vigilancia por video/i],
+];
+
+export function tagDescriptores(texto: string): string[] {
+  return DESCRIPTOR_PATTERNS
+    .filter(([, pattern]) => pattern.test(texto))
+    .map(([key]) => key);
+}
+
 export interface ResolutionItem {
   id: string;
   titulo: string;
@@ -20,6 +89,7 @@ export interface ResolutionItem {
     archivo_origen?: string;
   };
   vector?: number[];
+  descriptores?: string[];
 }
 
 interface SearchContextType {
@@ -69,6 +139,11 @@ export const SearchProvider: React.FC<{ children: React.ReactNode }> = ({
         if (items.length === 0) {
           throw new Error("No se encontraron resoluciones en el índice");
         }
+
+        // Asignar descriptores temáticos a cada resolución
+        items.forEach((item) => {
+          item.descriptores = tagDescriptores(item.texto);
+        });
 
         itemMapRef.current = new Map(items.map((item) => [item.id, item]));
         setAllItems(items);

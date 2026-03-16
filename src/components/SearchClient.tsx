@@ -1,11 +1,12 @@
 "use client";
 import React, { useState, useEffect, useCallback, useMemo, useRef } from "react";
-import { useSearchIndex } from "@/context/SearchContext";
+import { useSearchIndex, DESCRIPTOR_LABELS } from "@/context/SearchContext";
 import { SearchConfigPanel } from "./SearchConfigPanel";
 import { SearchResults } from "./SearchResults";
 
 const HISTORY_KEY = "ps_search_history";
 const MAX_HISTORY = 8;
+const STICKY_SCROLL_THRESHOLD = 100; // px from top before search bar becomes sticky
 
 // Hook de debounce personalizado
 function useDebounce<T>(value: T, delay: number): T {
@@ -30,6 +31,9 @@ export default function SearchClient() {
   const [isSticky, setIsSticky] = useState(false);
   const [yearFrom, setYearFrom] = useState<number | null>(null);
   const [yearTo, setYearTo] = useState<number | null>(null);
+  const [selectedDescriptores, setSelectedDescriptores] = useState<string[]>([]);
+  const [highlightEnabled, setHighlightEnabled] = useState(true);
+  const [page, setPage] = useState(1);
   const [searchHistory, setSearchHistory] = useState<string[]>([]);
   const [showHistory, setShowHistory] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -70,10 +74,52 @@ export default function SearchClient() {
     });
   }, [searchResults, yearFrom, yearTo]);
 
+  // Facet counts con lógica disyuntiva:
+  // - Descriptores no seleccionados: cuántos resultados NUEVOS añadirían al conjunto actual
+  // - Descriptores ya seleccionados: su conteo absoluto propio
+  const descriptorCounts = useMemo(() => {
+    const pool = debouncedQuery ? dateFilteredResults : allItems;
+    const counts: Record<string, number> = {};
+    for (const key of Object.keys(DESCRIPTOR_LABELS)) counts[key] = 0;
+
+    pool.forEach((item) => {
+      // Si el item ya está incluido por algún descriptor activo, no sumar de nuevo
+      const alreadyIncluded =
+        selectedDescriptores.length > 0 &&
+        selectedDescriptores.some((d) => item.descriptores?.includes(d));
+
+      if (!alreadyIncluded) {
+        item.descriptores?.forEach((d) => {
+          if (d in counts) counts[d]++;
+        });
+      }
+    });
+
+    // Para descriptores activos, mostrar su conteo absoluto propio
+    selectedDescriptores.forEach((sel) => {
+      if (sel in counts) {
+        counts[sel] = pool.filter((item) => item.descriptores?.includes(sel)).length;
+      }
+    });
+
+    return counts;
+  }, [dateFilteredResults, allItems, debouncedQuery, selectedDescriptores]);
+
+  // Resetear página cuando cambia la consulta o cualquier filtro
+  useEffect(() => { setPage(1); }, [debouncedQuery, yearFrom, yearTo, selectedDescriptores]);
+
+  // Filtrar por descriptores seleccionados (OR: coincide con cualquiera)
+  const descriptorFilteredResults = useMemo(() => {
+    if (selectedDescriptores.length === 0) return dateFilteredResults;
+    return dateFilteredResults.filter((item) =>
+      selectedDescriptores.some((d) => item.descriptores?.includes(d))
+    );
+  }, [dateFilteredResults, selectedDescriptores]);
+
   // Detectar scroll para aplicar sticky
   useEffect(() => {
     const handleScroll = () => {
-      setIsSticky(window.scrollY > 100);
+      setIsSticky(window.scrollY > STICKY_SCROLL_THRESHOLD);
     };
 
     window.addEventListener("scroll", handleScroll);
@@ -81,9 +127,11 @@ export default function SearchClient() {
   }, []);
 
   // Activar FlexSearch cuando cambia la consulta de debounce
+  // Usamos un límite interno alto para obtener suficientes resultados antes de aplicar filtros
+  // El límite de visualización se aplica después de filtrar por fecha y descriptores
   useEffect(() => {
-    search(debouncedQuery, limit);
-  }, [debouncedQuery, limit, search]);
+    search(debouncedQuery, 500);
+  }, [debouncedQuery, search]);
 
   // Sincronizar el historial de búsqueda con localStorage y mantener solo las últimas N entradas únicas
   useEffect(() => {
@@ -202,7 +250,7 @@ export default function SearchClient() {
               aria-describedby="search-hint"
               autoComplete="off"
               className={`w-full pl-12 pr-12 md:pr-10 border border-neutral-300 rounded-lg text-base md:text-sm transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-neutral-900 dark:border-neutral-700 dark:text-neutral-100 ${
-                isSticky ? "py-1.5 shadow-sm" : "py-3 md:py-2"
+                isSticky ? "py-1.5 shadow-sm" : "py-3 sm:py-2.5 md:py-2"
               }`}
             />
             <span id="search-hint" className="sr-only">
@@ -281,15 +329,20 @@ export default function SearchClient() {
             )}
           </div>
           {query && (
-            <p aria-live="polite" aria-atomic="true" className="text-xs text-neutral-500 dark:text-neutral-400 flex items-center gap-1.5">
-              {dateFilteredResults.length} resultado
-              {dateFilteredResults.length !== 1 ? "s" : ""} encontrado
-              {dateFilteredResults.length !== 1 ? "s" : ""}
+            <p aria-live="polite" aria-atomic="true" className="text-xs text-neutral-500 dark:text-neutral-400 flex items-center flex-wrap gap-1.5">
+              {descriptorFilteredResults.length} resultado
+              {descriptorFilteredResults.length !== 1 ? "s" : ""} encontrado
+              {descriptorFilteredResults.length !== 1 ? "s" : ""}
               {(yearFrom || yearTo) && (
                 <span className="rounded-full bg-blue-100 px-1.5 py-0.5 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300 font-medium">
                   {yearFrom ?? "…"}–{yearTo ?? "…"}
                 </span>
               )}
+              {selectedDescriptores.map((d) => (
+                <span key={d} className="rounded-full bg-indigo-100 px-1.5 py-0.5 text-indigo-700 dark:bg-indigo-900/40 dark:text-indigo-300 font-medium">
+                  {DESCRIPTOR_LABELS[d] ?? d}
+                </span>
+              ))}
             </p>
           )}
         </div>
@@ -307,6 +360,12 @@ export default function SearchClient() {
         yearTo={yearTo}
         setYearTo={setYearTo}
         availableYears={availableYears}
+        selectedDescriptores={selectedDescriptores}
+        setSelectedDescriptores={setSelectedDescriptores}
+        descriptorCounts={descriptorCounts}
+        highlightEnabled={highlightEnabled}
+        setHighlightEnabled={setHighlightEnabled}
+        isSearching={debouncedQuery.length > 0}
       />
 
       <SearchResults
@@ -314,9 +373,13 @@ export default function SearchClient() {
         limit={limit}
         similarityThreshold={similarityThreshold}
         relatedLimit={relatedLimit}
-        filteredItems={debouncedQuery.length > 0 ? dateFilteredResults : allItems}
+        filteredItems={debouncedQuery.length > 0 ? descriptorFilteredResults : allItems}
         isSearching={debouncedQuery.length > 0}
         useFlexSearch={debouncedQuery.length > 0}
+        highlightEnabled={highlightEnabled}
+        selectedDescriptores={selectedDescriptores}
+        page={page}
+        setPage={setPage}
       />
 
       {/* Botón flotante para volver arriba */}

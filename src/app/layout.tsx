@@ -1,13 +1,23 @@
 import { Inter } from "next/font/google";
 import { SearchProvider } from "@/context/SearchContext";
-// @ts-ignore
 import "./globals.css";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-sans" });
 
 export const metadata = {
   title: "PrivataSearch",
-  description: "Buscador de jurisprudencia de protección de datos personales",
+  description: "Buscador de jurisprudencia de protección de datos personales de la PRODHAB (Costa Rica)",
+  openGraph: {
+    title: "PrivataSearch",
+    description: "Buscador de jurisprudencia de protección de datos personales de la PRODHAB (Costa Rica)",
+    type: "website",
+    locale: "es_CR",
+  },
+  twitter: {
+    card: "summary",
+    title: "PrivataSearch",
+    description: "Buscador de jurisprudencia de protección de datos personales de la PRODHAB (Costa Rica)",
+  },
 };
 
 export default function RootLayout({
@@ -15,6 +25,7 @@ export default function RootLayout({
 }: {
   children: React.ReactNode;
 }) {
+  // suppressHydrationWarning: dark mode class is injected by inline script before hydration
   return (
     <html lang="es" className={inter.variable} suppressHydrationWarning>
       <head>

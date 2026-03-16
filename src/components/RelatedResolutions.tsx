@@ -21,6 +21,7 @@ interface RelatedResolutionsProps {
   minSimilarity?: number;
   maxItems?: number;
   showVisualization?: boolean;
+  highlight?: (text: string) => React.ReactNode;
 }
 
 export function RelatedResolutions({
@@ -28,6 +29,7 @@ export function RelatedResolutions({
   minSimilarity = 0.5,
   maxItems = 5,
   showVisualization = true,
+  highlight,
 }: RelatedResolutionsProps) {
   const [expanded, setExpanded] = useState(false);
   const [expandedText, setExpandedText] = useState<{ [id: string]: boolean }>(
@@ -193,9 +195,10 @@ export function RelatedResolutions({
                 {item.texto && (
                   <div className="mt-2 text-neutral-700 dark:text-neutral-300">
                     <p
+                      id={`rel-text-${item.id}`}
                       className={`text-sm leading-relaxed break-words ${!isTextExpanded ? "line-clamp-3" : ""}`}
                     >
-                      {item.texto}
+                      {highlight ? highlight(item.texto) : item.texto}
                     </p>
                     {item.texto.length > 300 && (
                       <button
@@ -205,6 +208,8 @@ export function RelatedResolutions({
                             [item.id]: !isTextExpanded,
                           }))
                         }
+                        aria-expanded={isTextExpanded}
+                        aria-controls={`rel-text-${item.id}`}
                         className="mt-1 py-2 -my-2 px-1 -mx-1 inline-flex text-sm font-medium text-blue-600 hover:underline dark:text-blue-400 transition-colors"
                       >
                         {isTextExpanded ? "Ver menos" : "Ver más"}
