@@ -1,5 +1,11 @@
 "use client";
-import React, { useState, useEffect, useCallback, useMemo, useRef } from "react";
+import React, {
+  useState,
+  useEffect,
+  useCallback,
+  useMemo,
+  useRef,
+} from "react";
 import { useSearchIndex, DESCRIPTOR_LABELS } from "@/context/SearchContext";
 import { SearchConfigPanel } from "./SearchConfigPanel";
 import { SearchResults } from "./SearchResults";
@@ -31,7 +37,9 @@ export default function SearchClient() {
   const [isSticky, setIsSticky] = useState(false);
   const [yearFrom, setYearFrom] = useState<number | null>(null);
   const [yearTo, setYearTo] = useState<number | null>(null);
-  const [selectedDescriptores, setSelectedDescriptores] = useState<string[]>([]);
+  const [selectedDescriptores, setSelectedDescriptores] = useState<string[]>(
+    [],
+  );
   const [highlightEnabled, setHighlightEnabled] = useState(true);
   const [page, setPage] = useState(1);
   const [searchHistory, setSearchHistory] = useState<string[]>([]);
@@ -74,45 +82,32 @@ export default function SearchClient() {
     });
   }, [searchResults, yearFrom, yearTo]);
 
-  // Facet counts con lógica disyuntiva:
-  // - Descriptores no seleccionados: cuántos resultados NUEVOS añadirían al conjunto actual
-  // - Descriptores ya seleccionados: su conteo absoluto propio
+  // Facet counts: muestra el conteo absoluto de cada descriptor en el pool actual
+  // Esto es más intuitivo: el usuario ve cuántos resultados tienen cada tema
   const descriptorCounts = useMemo(() => {
     const pool = debouncedQuery ? dateFilteredResults : allItems;
     const counts: Record<string, number> = {};
     for (const key of Object.keys(DESCRIPTOR_LABELS)) counts[key] = 0;
 
     pool.forEach((item) => {
-      // Si el item ya está incluido por algún descriptor activo, no sumar de nuevo
-      const alreadyIncluded =
-        selectedDescriptores.length > 0 &&
-        selectedDescriptores.some((d) => item.descriptores?.includes(d));
-
-      if (!alreadyIncluded) {
-        item.descriptores?.forEach((d) => {
-          if (d in counts) counts[d]++;
-        });
-      }
-    });
-
-    // Para descriptores activos, mostrar su conteo absoluto propio
-    selectedDescriptores.forEach((sel) => {
-      if (sel in counts) {
-        counts[sel] = pool.filter((item) => item.descriptores?.includes(sel)).length;
-      }
+      item.descriptores?.forEach((d) => {
+        if (d in counts) counts[d]++;
+      });
     });
 
     return counts;
-  }, [dateFilteredResults, allItems, debouncedQuery, selectedDescriptores]);
+  }, [dateFilteredResults, allItems, debouncedQuery]);
 
   // Resetear página cuando cambia la consulta o cualquier filtro
-  useEffect(() => { setPage(1); }, [debouncedQuery, yearFrom, yearTo, selectedDescriptores]);
+  useEffect(() => {
+    setPage(1);
+  }, [debouncedQuery, yearFrom, yearTo, selectedDescriptores]);
 
   // Filtrar por descriptores seleccionados (OR: coincide con cualquiera)
   const descriptorFilteredResults = useMemo(() => {
     if (selectedDescriptores.length === 0) return dateFilteredResults;
     return dateFilteredResults.filter((item) =>
-      selectedDescriptores.some((d) => item.descriptores?.includes(d))
+      selectedDescriptores.some((d) => item.descriptores?.includes(d)),
     );
   }, [dateFilteredResults, selectedDescriptores]);
 
@@ -189,7 +184,10 @@ export default function SearchClient() {
   return (
     <div>
       {error && (
-        <div role="alert" className="mb-4 rounded-lg border border-red-200 bg-red-50 p-4 text-red-700 dark:border-red-800 dark:bg-red-900/30 dark:text-red-300 animate-slide-down">
+        <div
+          role="alert"
+          className="mb-4 rounded-lg border border-red-200 bg-red-50 p-4 text-red-700 dark:border-red-800 dark:bg-red-900/30 dark:text-red-300 animate-slide-down"
+        >
           <p className="font-medium">Error al cargar datos</p>
           <p className="text-sm">{error}</p>
         </div>
@@ -298,7 +296,9 @@ export default function SearchClient() {
                   <button
                     onClick={() => {
                       setSearchHistory([]);
-                      try { localStorage.removeItem(HISTORY_KEY); } catch {}
+                      try {
+                        localStorage.removeItem(HISTORY_KEY);
+                      } catch {}
                       setShowHistory(false);
                     }}
                     className="text-xs text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300 transition-colors px-2 py-1.5 -mr-1 rounded hover:bg-neutral-100 dark:hover:bg-neutral-800"
@@ -319,8 +319,19 @@ export default function SearchClient() {
                     }}
                     className="flex w-full items-center gap-3 px-3 py-2.5 text-sm text-neutral-700 hover:bg-neutral-50 dark:text-neutral-300 dark:hover:bg-neutral-800 transition-colors text-left"
                   >
-                    <svg className="h-3.5 w-3.5 text-neutral-400 flex-shrink-0" aria-hidden="true" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    <svg
+                      className="h-3.5 w-3.5 text-neutral-400 flex-shrink-0"
+                      aria-hidden="true"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                      strokeWidth={2}
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+                      />
                     </svg>
                     <span className="truncate">{h}</span>
                   </button>
@@ -329,7 +340,11 @@ export default function SearchClient() {
             )}
           </div>
           {query && (
-            <p aria-live="polite" aria-atomic="true" className="text-xs text-neutral-500 dark:text-neutral-400 flex items-center flex-wrap gap-1.5">
+            <p
+              aria-live="polite"
+              aria-atomic="true"
+              className="text-xs text-neutral-500 dark:text-neutral-400 flex items-center flex-wrap gap-1.5"
+            >
               {descriptorFilteredResults.length} resultado
               {descriptorFilteredResults.length !== 1 ? "s" : ""} encontrado
               {descriptorFilteredResults.length !== 1 ? "s" : ""}
@@ -339,7 +354,10 @@ export default function SearchClient() {
                 </span>
               )}
               {selectedDescriptores.map((d) => (
-                <span key={d} className="rounded-full bg-indigo-100 px-1.5 py-0.5 text-indigo-700 dark:bg-indigo-900/40 dark:text-indigo-300 font-medium">
+                <span
+                  key={d}
+                  className="rounded-full bg-indigo-100 px-1.5 py-0.5 text-indigo-700 dark:bg-indigo-900/40 dark:text-indigo-300 font-medium"
+                >
                   {DESCRIPTOR_LABELS[d] ?? d}
                 </span>
               ))}
@@ -373,7 +391,9 @@ export default function SearchClient() {
         limit={limit}
         similarityThreshold={similarityThreshold}
         relatedLimit={relatedLimit}
-        filteredItems={debouncedQuery.length > 0 ? descriptorFilteredResults : allItems}
+        filteredItems={
+          debouncedQuery.length > 0 ? descriptorFilteredResults : allItems
+        }
         isSearching={debouncedQuery.length > 0}
         useFlexSearch={debouncedQuery.length > 0}
         highlightEnabled={highlightEnabled}
