@@ -19,8 +19,7 @@ export default function Footer() {
               />
               <img
                 src="/logo.png"
-                alt=""
-                aria-hidden="true"
+                alt="Vasquez Drexler — sitio web del autor"
                 className="h-12 sm:h-14 w-auto hidden dark:block"
               />
             </a>

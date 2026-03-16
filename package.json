@@ -13,11 +13,11 @@
     "chart.js": "^4.5.1",
     "class-variance-authority": "^0.7.1",
     "flexsearch": "^0.8.212",
-    "lucide-react": "^0.561.0",
-    "next": "16.0.10",
-    "react": "19.2.3",
+    "lucide-react": "^0.577.0",
+    "next": "16.1.6",
+    "react": "19.2.4",
     "react-chartjs-2": "^5.3.1",
-    "react-dom": "19.2.3",
+    "react-dom": "19.2.4",
     "react-markdown": "^10.1.0"
   },
   "devDependencies": {
@@ -25,8 +25,8 @@
     "@types/node": "^25",
     "@types/react": "^19",
     "@types/react-dom": "^19",
-    "lightningcss": "^1.30.2",
-    "serve-handler": "^6.1.6",
+    "lightningcss": "^1.32.0",
+    "serve-handler": "^6.1.7",
     "tailwindcss": "^4",
     "typescript": "^5"
   }
