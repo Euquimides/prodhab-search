@@ -1,20 +1,19 @@
 "use client";
 
-import { useEffect, useState, useCallback, useMemo } from "react";
+import { useEffect, useState, useCallback } from "react";
 import {
   Chart as ChartJS,
   CategoryScale,
   LinearScale,
   BarElement,
-  LineElement,
   PointElement,
   ArcElement,
   Title,
   Tooltip,
   Legend,
-  Filler,
 } from "chart.js";
-import { Bar, Line, Scatter, Doughnut } from "react-chartjs-2";
+import { Bar, Scatter, Doughnut } from "react-chartjs-2";
+import Link from "next/link";
 import Footer from "@/components/Footer";
 import { DarkModeToggle } from "@/components/DarkModeToggle";
 import {
@@ -22,80 +21,44 @@ import {
   DatasetStatistics,
   Dataset,
 } from "@/utils/statisticsCalculator";
+import { RESULTADO_LABELS } from "@/context/SearchContext";
 
 ChartJS.register(
-  // Registrar los componentes de Chart.js
   CategoryScale,
   LinearScale,
   BarElement,
-  LineElement,
   PointElement,
   ArcElement,
   Title,
   Tooltip,
   Legend,
-  Filler,
 );
 
 const colors = {
-  // Paleta de colores para los gráficos
   primary: "rgba(59, 130, 246, 0.8)",
   primaryBorder: "rgba(59, 130, 246, 1)",
-  secondary: "rgba(16, 185, 129, 0.8)",
-  secondaryBorder: "rgba(16, 185, 129, 1)",
-  accent: "rgba(245, 158, 11, 0.8)",
-  accentBorder: "rgba(245, 158, 11, 1)",
-  danger: "rgba(239, 68, 68, 0.8)",
-  dangerBorder: "rgba(239, 68, 68, 1)",
-  purple: "rgba(139, 92, 246, 0.8)",
-  purpleBorder: "rgba(139, 92, 246, 1)",
-  pink: "rgba(236, 72, 153, 0.8)",
-  pinkBorder: "rgba(236, 72, 153, 1)",
+  // Cluster palette: 4 system hues × 2 opacity tiers — no off-system colors
   palette: [
-    "rgba(59, 130, 246, 0.7)",
-    "rgba(16, 185, 129, 0.7)",
-    "rgba(245, 158, 11, 0.7)",
-    "rgba(239, 68, 68, 0.7)",
-    "rgba(139, 92, 246, 0.7)",
-    "rgba(236, 72, 153, 0.7)",
-    "rgba(20, 184, 166, 0.7)",
-    "rgba(249, 115, 22, 0.7)",
+    "rgba(37, 99, 235, 0.75)",   // Civic Blue — full
+    "rgba(99, 102, 241, 0.75)",  // Indigo Signal — full
+    "rgba(16, 185, 129, 0.75)",  // Ledger Green — full
+    "rgba(245, 158, 11, 0.75)",  // Amber — full
+    "rgba(37, 99, 235, 0.42)",   // Civic Blue — light
+    "rgba(99, 102, 241, 0.42)",  // Indigo Signal — light
+    "rgba(16, 185, 129, 0.42)",  // Ledger Green — light
+    "rgba(245, 158, 11, 0.42)",  // Amber — light
   ],
   paletteBorder: [
-    "rgba(59, 130, 246, 1)",
+    "rgba(37, 99, 235, 1)",
+    "rgba(99, 102, 241, 1)",
     "rgba(16, 185, 129, 1)",
     "rgba(245, 158, 11, 1)",
-    "rgba(239, 68, 68, 1)",
-    "rgba(139, 92, 246, 1)",
-    "rgba(236, 72, 153, 1)",
-    "rgba(20, 184, 166, 1)",
-    "rgba(249, 115, 22, 1)",
+    "rgba(37, 99, 235, 0.65)",
+    "rgba(99, 102, 241, 0.65)",
+    "rgba(16, 185, 129, 0.65)",
+    "rgba(245, 158, 11, 0.65)",
   ],
 };
-
-interface StatCardProps {
-  title: string;
-  value: string | number;
-  subtitle?: string;
-}
-
-function StatCard({ title, value, subtitle }: StatCardProps) {
-  return (
-    <div className="bg-white dark:bg-neutral-900 rounded-xl shadow-sm border border-neutral-200 dark:border-neutral-800 p-4 sm:p-6">
-      <h3 className="text-xs sm:text-sm font-medium text-neutral-500 dark:text-neutral-400 truncate">
-        {title}
-      </h3>
-      <p className="mt-2 text-xl sm:text-2xl lg:text-3xl font-bold text-neutral-900 dark:text-neutral-100 break-words">
-        {value}
-      </p>
-      {subtitle && (
-        <p className="mt-1 text-xs text-neutral-500 dark:text-neutral-400 truncate">
-          {subtitle}
-        </p>
-      )}
-    </div>
-  );
-}
 
 interface ChartCardProps {
   title: string;
@@ -157,11 +120,11 @@ export default function EstadisticasPage() {
 
   if (loading) {
     return (
-      <div role="status" aria-live="polite" className="min-h-screen bg-neutral-50 dark:bg-neutral-950 flex items-center justify-center">
+      <div role="status" aria-live="polite" className="min-h-screen bg-white dark:bg-neutral-950 flex items-center justify-center">
         <div className="text-center">
           <div className="h-12 w-12 animate-spin rounded-full border-4 border-neutral-200 border-t-blue-600 dark:border-neutral-700 dark:border-t-blue-400 mx-auto mb-4"></div>
           <p className="text-neutral-600 dark:text-neutral-400">
-            Calculando estadísticas...
+            Calculando estadísticas, esto puede tardar unos segundos...
           </p>
         </div>
       </div>
@@ -170,7 +133,7 @@ export default function EstadisticasPage() {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-neutral-50 dark:bg-neutral-950 flex items-center justify-center">
+      <div className="min-h-screen bg-white dark:bg-neutral-950 flex items-center justify-center">
         <div className="rounded-lg border border-red-200 bg-red-50 p-6 text-center dark:border-red-800 dark:bg-red-900/30">
           <p className="font-medium text-red-700 dark:text-red-300 mb-4">{error}</p>
           <button
@@ -190,8 +153,39 @@ export default function EstadisticasPage() {
   const gridColor = isDark ? "rgba(255,255,255,0.07)" : "rgba(0,0,0,0.05)";
   const tickColor = isDark ? "#a3a3a3" : "#737373";
 
+  const resultadoKeys = Object.keys(stats.resultadoDistribution).sort(
+    (a, b) => stats.resultadoDistribution[b] - stats.resultadoDistribution[a],
+  );
+  const resultadoData = {
+    labels: resultadoKeys.map((k) => RESULTADO_LABELS[k as keyof typeof RESULTADO_LABELS] ?? k),
+    datasets: [
+      {
+        label: "Resoluciones",
+        data: resultadoKeys.map((k) => stats.resultadoDistribution[k]),
+        backgroundColor: colors.palette,
+        borderColor: colors.paletteBorder,
+        borderWidth: 2,
+      },
+    ],
+  };
+
+  const recursoKeys = Object.keys(stats.recursoDisponibleDistribution).sort(
+    (a, b) => stats.recursoDisponibleDistribution[b] - stats.recursoDisponibleDistribution[a],
+  );
+  const recursoData = {
+    labels: recursoKeys,
+    datasets: [
+      {
+        label: "Resoluciones",
+        data: recursoKeys.map((k) => stats.recursoDisponibleDistribution[k]),
+        backgroundColor: colors.palette,
+        borderColor: colors.paletteBorder,
+        borderWidth: 2,
+      },
+    ],
+  };
+
   const yearsKeys = Object.keys(stats.recordsPerYear).sort();
-  // Preparar datos para los gráficos
   const recordsPerYearData = {
     labels: yearsKeys,
     datasets: [
@@ -205,10 +199,8 @@ export default function EstadisticasPage() {
     ],
   };
 
-  // Cluster size distribution
   const clusterSizeData = stats.clusterAnalysis
     ? {
-        // Distribución del tamaño de los clústeres
         labels: stats.clusterAnalysis.clusters.map(
           (c) => `Grupo ${c.id + 1}`,
         ),
@@ -224,10 +216,8 @@ export default function EstadisticasPage() {
       }
     : null;
 
-  // Cluster distribution over time
   const clusterTimeData = stats.clusterAnalysis
     ? (() => {
-        // Distribución de clústeres a lo largo del tiempo
         const years = Object.keys(
           stats.clusterAnalysis.clusterDistributionOverTime,
         ).sort();
@@ -251,16 +241,12 @@ export default function EstadisticasPage() {
       })()
     : null;
 
-  // Scatter plot 
   const scatterData = stats.clusterAnalysis
     ? (() => {
-        // Datos para el diagrama de dispersión de la visualización de clústeres
         const clusters = stats.clusterAnalysis.clusters;
         const scatterPoints = stats.clusterAnalysis.scatterData;
 
-        // Group points by cluster
         const datasets = clusters.map((cluster, idx) => {
-          // Agrupar puntos por clúster
           const clusterPoints = scatterPoints.filter(
             (p) => p.clusterId === cluster.id,
           );
@@ -329,161 +315,118 @@ export default function EstadisticasPage() {
       },
       tooltip: {
         callbacks: {
-          label: function (context: any) {
-            const point = context.raw as { expediente?: string };
-            return [
-              `${context.dataset.label}`,
-              `Expediente: ${point.expediente || "N/A"}`,
-            ];
+          label: function (context: { dataset: { label?: string }; raw: unknown }) {
+            const raw = context.raw as { expediente?: string };
+            return `Expediente: ${raw.expediente || "N/A"}`;
           },
         },
       },
     },
     scales: {
       x: {
-        title: { display: true, text: "Componente Principal 1", color: tickColor },
+        title: { display: false },
         grid: { color: gridColor },
-        ticks: { color: tickColor },
+        ticks: { display: false },
       },
       y: {
-        title: { display: true, text: "Componente Principal 2", color: tickColor },
+        title: { display: false },
         grid: { color: gridColor },
-        ticks: { color: tickColor },
+        ticks: { display: false },
       },
     },
   };
 
   return (
-    <div className="min-h-screen bg-neutral-50 dark:bg-neutral-950 flex flex-col">
+    <div className="min-h-screen bg-white dark:bg-neutral-950 flex flex-col">
       <div className="flex justify-end px-4 sm:px-6 pt-4 sm:pt-6">
         <DarkModeToggle />
       </div>
       <div className="mx-auto max-w-7xl px-4 sm:px-6 py-6 sm:py-8 flex-1 w-full">
         {/* Header */}
         <div className="mb-8 sm:mb-12">
-          <a
+          <Link
             href="/"
             className="inline-flex items-center text-sm text-blue-600 dark:text-blue-400 hover:underline mb-4"
           >
             ← Volver al buscador
-          </a>
+          </Link>
           <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold tracking-tight text-neutral-900 dark:text-neutral-100">
             Estadísticas del conjunto de datos
           </h1>
-          <p className="mt-2 text-neutral-600 dark:text-neutral-400">
-            Análisis estadístico de las resoluciones de PRODHAB
+          <p className="mt-2 text-sm text-neutral-500 dark:text-neutral-400 max-w-prose">
+            {stats.totalRecords.toLocaleString("es-CR")} resoluciones de{" "}
+            {stats.uniqueExpedientes.toLocaleString("es-CR")} expedientes únicos,
+            desde {stats.earliestDate?.slice(0, 4) ?? "N/A"} hasta{" "}
+            {stats.latestDate?.slice(0, 4) ?? "N/A"}.
           </p>
         </div>
 
-        {/* Key Metrics */}
-        <section className="mb-8 sm:mb-12">
-          <h2 className="text-xl font-semibold text-neutral-900 dark:text-neutral-100 mb-4">
-            Métricas Principales
-          </h2>
-          <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-5 gap-4">
-            <StatCard
-              title="Total de Registros"
-              value={stats.totalRecords.toLocaleString()}
-              subtitle="Resoluciones en el dataset"
-            />
-            <StatCard
-              title="Expedientes Únicos"
-              value={stats.uniqueExpedientes.toLocaleString()}
-            />
-            <StatCard
-              title="Resoluciones Únicas"
-              value={stats.uniqueResoluciones.toLocaleString()}
-            />
-            <StatCard
-              title="Fecha Más Antigua"
-              value={stats.earliestDate || "N/A"}
-            />
-            <StatCard
-              title="Fecha Más Reciente"
-              value={stats.latestDate || "N/A"}
-            />
-          </div>
-        </section>
-
         {/* Records per Year */}
         <section className="mb-8 sm:mb-12">
-          <h2 className="text-xl font-semibold text-neutral-900 dark:text-neutral-100 mb-4">
-            Distribución Temporal
-          </h2>
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <ChartCard title="Resoluciones por Año">
-              <div className="h-64 sm:h-80">
-                <Bar data={recordsPerYearData} options={barOptions} />
-              </div>
-            </ChartCard>
-
-            <ChartCard title="Tendencia Anual">
-              <div className="h-64 sm:h-80">
-                <Line
-                  data={{
-                    ...recordsPerYearData,
-                    datasets: [
-                      {
-                        ...recordsPerYearData.datasets[0],
-                        tension: 0.3,
-                        fill: true,
-                        backgroundColor: "rgba(59, 130, 246, 0.1)",
-                      },
-                    ],
-                  }}
-                  options={chartOptions}
-                />
-              </div>
-            </ChartCard>
-          </div>
+          <ChartCard title="Resoluciones por año">
+            <div className="h-64 sm:h-80">
+              <Bar data={recordsPerYearData} options={barOptions} />
+            </div>
+          </ChartCard>
         </section>
 
         {/* Clustering Analysis */}
         {stats.clusterAnalysis && (
           <section className="mb-8 sm:mb-12">
             <h2 className="text-xl font-semibold text-neutral-900 dark:text-neutral-100 mb-4">
-              Análisis de Similitud de Resoluciones
+              Agrupación Temática de Resoluciones
             </h2>
-            <p className="text-sm text-neutral-600 dark:text-neutral-400 mb-6">
-              Las resoluciones se agrupan por similitud semántica usando
-              clustering K-means. Los puntos cercanos representan resoluciones
-              con contenido similar.
+            <p className="text-sm text-neutral-600 dark:text-neutral-400 mb-2">
+              Las resoluciones se agruparon automáticamente según su contenido:
+              se identificaron{" "}
+              <strong className="font-semibold text-neutral-800 dark:text-neutral-200">
+                {stats.clusterAnalysis.numClusters} grupos temáticos
+              </strong>
+              , el mayor con{" "}
+              {stats.clusterAnalysis.mostPopulated.size.toLocaleString()}{" "}
+              resoluciones y el menor con{" "}
+              {stats.clusterAnalysis.leastPopulated.size.toLocaleString()}.
+              {stats.clusterAnalysis.outlierCount > 0 && (
+                <>
+                  {" "}
+                  {stats.clusterAnalysis.outlierCount.toLocaleString()}{" "}
+                  resoluciones no encajaron en ningún grupo con claridad.
+                </>
+              )}{" "}
+              Resoluciones del mismo color tratan asuntos parecidos.
             </p>
-
-            {/* Clustering summary cards */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-              <StatCard
-                title="Grupos de Similitud"
-                value={stats.clusterAnalysis.numClusters}
-                subtitle="grupos identificados"
-              />
-              <StatCard
-                title="Grupo Más Grande"
-                value={stats.clusterAnalysis.mostPopulated.size}
-                subtitle={`Grupo ${stats.clusterAnalysis.mostPopulated.clusterId + 1}`}
-              />
-              <StatCard
-                title="Grupo Más Pequeño"
-                value={stats.clusterAnalysis.leastPopulated.size}
-                subtitle={`Grupo ${stats.clusterAnalysis.leastPopulated.clusterId + 1}`}
-              />
-              <StatCard
-                title="Resoluciones Atípicas"
-                value={stats.clusterAnalysis.outlierCount}
-                subtitle="casos únicos"
-              />
-            </div>
+            <details className="mb-6 text-sm group">
+              <summary className="cursor-pointer text-blue-600 dark:text-blue-400 hover:underline select-none w-fit list-none flex items-center gap-1">
+                <svg
+                  className="w-3 h-3 transition-transform duration-200 ease-[cubic-bezier(0.25,1,0.5,1)] group-open:rotate-90"
+                  viewBox="0 0 12 12"
+                  fill="currentColor"
+                  aria-hidden="true"
+                >
+                  <path d="M4 2l5 4-5 4V2z" />
+                </svg>
+                ¿Cómo interpretar esta sección?
+              </summary>
+              <p className="mt-2 text-neutral-600 dark:text-neutral-400 max-w-2xl">
+                El sistema analizó el texto de cada resolución y la ubicó cerca
+                de otras con contenido parecido. No se trata de una
+                clasificación legal oficial: es una herramienta exploratoria
+                para descubrir patrones en el conjunto de datos. Los grupos no
+                tienen nombre fijo; su significado emerge al revisar las
+                resoluciones que los componen.
+              </p>
+            </details>
 
             {/* Scatter Plot - Main visualization */}
             {scatterData && (
               <ChartCard
-                title="Mapa de Similitud de Resoluciones"
+                title="Mapa de agrupación temática"
                 className="mb-6"
               >
                 <p className="text-xs text-neutral-500 dark:text-neutral-400 mb-4">
-                  Haga clic o pase el cursor sobre los puntos para ver el
-                  expediente y resolución. Los colores representan grupos de
-                  resoluciones similares.
+                  Cada punto es una resolución. Los puntos del mismo color
+                  pertenecen al mismo grupo temático. Pase el cursor sobre un
+                  punto para ver el expediente.
                 </p>
                 <div className="h-96 sm:h-[500px]">
                   <Scatter data={scatterData} options={scatterOptions} />
@@ -493,7 +436,7 @@ export default function EstadisticasPage() {
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               {clusterSizeData && (
-                <ChartCard title="Distribución por Grupos">
+                <ChartCard title="Tamaño de cada grupo temático">
                   <div className="h-64 sm:h-80 flex items-center justify-center">
                     <Doughnut data={clusterSizeData} options={chartOptions} />
                   </div>
@@ -501,7 +444,7 @@ export default function EstadisticasPage() {
               )}
 
               {clusterTimeData && (
-                <ChartCard title="Evolución de Grupos por Año">
+                <ChartCard title="Evolución de grupos temáticos por año">
                   <div className="h-64 sm:h-80">
                     <Bar
                       data={clusterTimeData}
@@ -530,7 +473,7 @@ export default function EstadisticasPage() {
             {/* Cluster details table */}
             <div className="mt-6 bg-white dark:bg-neutral-900 rounded-xl shadow-sm border border-neutral-200 dark:border-neutral-800 p-4 sm:p-6 overflow-x-auto">
               <h3 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100 mb-4">
-                Detalle de Grupos de Similitud
+                Detalle de grupos temáticos
               </h3>
               <table className="w-full text-sm">
                 <thead>
@@ -552,7 +495,7 @@ export default function EstadisticasPage() {
                 <tbody>
                   {stats.clusterAnalysis.clusters
                     .sort((a, b) => b.size - a.size)
-                    .map((cluster, idx) => {
+                    .map((cluster) => {
                       const percentage = (
                         (cluster.size / stats.totalRecords) *
                         100
@@ -569,6 +512,7 @@ export default function EstadisticasPage() {
                               style={{
                                 backgroundColor: colors.palette[colorIndex],
                               }}
+                              aria-hidden="true"
                             />
                             Grupo {cluster.id + 1}
                           </td>
@@ -578,7 +522,7 @@ export default function EstadisticasPage() {
                           <td className="py-2 px-3 text-right text-neutral-700 dark:text-neutral-300">
                             {percentage}%
                           </td>
-                          <td className="py-2 px-3">
+                          <td className="py-2 px-3" role="presentation">
                             <div className="h-2 bg-neutral-200 dark:bg-neutral-700 rounded-full overflow-hidden w-32">
                               <div
                                 className="h-full rounded-full"
@@ -597,6 +541,27 @@ export default function EstadisticasPage() {
             </div>
           </section>
         )}
+
+        {/* Resultado & Recurso disponible */}
+        <section className="mb-8 sm:mb-12">
+          <h2 className="text-xl font-semibold text-neutral-900 dark:text-neutral-100 mb-4">
+            Resultados y Recursos
+          </h2>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <ChartCard title="Resultado de las resoluciones">
+              <div className="h-64 sm:h-80 flex items-center justify-center">
+                <Doughnut data={resultadoData} options={chartOptions} />
+              </div>
+            </ChartCard>
+            <ChartCard title="Recurso disponible">
+              <div className="h-64 sm:h-80 flex items-center justify-center">
+                <Doughnut data={recursoData} options={chartOptions} />
+              </div>
+            </ChartCard>
+          </div>
+        </section>
+
+
       </div>
       <Footer />
     </div>

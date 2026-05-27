@@ -6,13 +6,95 @@ import React, {
   useMemo,
   useRef,
 } from "react";
-import { useSearchIndex, DESCRIPTOR_LABELS } from "@/context/SearchContext";
+import {
+  useSearchIndex,
+  DESCRIPTOR_LABELS,
+  RESULTADO_LABELS,
+  TIPO_LABELS,
+  ResultadoType,
+  TipoProcedimientoType,
+} from "@/context/SearchContext";
 import { SearchConfigPanel } from "./SearchConfigPanel";
 import { SearchResults } from "./SearchResults";
 
 const HISTORY_KEY = "ps_search_history";
+
+const MAX_INLINE_CHIPS = 5;
+
+interface DescriptorChipStripProps {
+  isSearching: boolean;
+  descriptorCounts: Record<string, number>;
+  selectedDescriptores: string[];
+  setSelectedDescriptores: (value: string[]) => void;
+}
+
+function DescriptorChipStrip({
+  isSearching,
+  descriptorCounts,
+  selectedDescriptores,
+  setSelectedDescriptores,
+}: DescriptorChipStripProps) {
+  const topChips = useMemo(() => {
+    if (!isSearching) return [];
+    return Object.entries(descriptorCounts)
+      .filter(([, count]) => count > 0)
+      .sort(([, a], [, b]) => b - a)
+      .slice(0, MAX_INLINE_CHIPS)
+      .map(([key, count]) => ({ key, label: DESCRIPTOR_LABELS[key] ?? key, count }));
+  }, [isSearching, descriptorCounts]);
+
+  if (topChips.length === 0) return null;
+
+  const activeKey = selectedDescriptores.length === 1 ? selectedDescriptores[0] : null;
+  const hasActiveChip = activeKey !== null && topChips.some((c) => c.key === activeKey);
+
+  const handleChip = (key: string) => {
+    if (selectedDescriptores.includes(key)) {
+      setSelectedDescriptores([]);
+    } else {
+      setSelectedDescriptores([key]);
+    }
+  };
+
+  return (
+    <div className="mb-4" aria-label="Refinar por tema">
+      <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-neutral-500 dark:text-neutral-400">
+        {hasActiveChip ? "Filtrando por tema" : "Refinar por tema"}
+      </p>
+      <div className="flex flex-wrap gap-1.5" role="group" aria-label="Temas jurídicos">
+        {topChips.map(({ key, label, count }, index) => {
+          const active = selectedDescriptores.includes(key);
+          return (
+            <button
+              key={key}
+              onClick={() => handleChip(key)}
+              aria-pressed={active}
+              className={`animate-chip-in inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-medium transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-1 active:scale-95 ${
+                active
+                  ? "border-indigo-500 bg-indigo-600 text-white dark:border-indigo-400 dark:bg-indigo-700"
+                  : "border-neutral-200 bg-white text-neutral-600 hover:border-indigo-300 hover:bg-indigo-50 hover:text-indigo-800 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-300 dark:hover:border-indigo-600 dark:hover:bg-indigo-900/30 dark:hover:text-indigo-200"
+              }`}
+              style={{ animationDelay: `${index * 30}ms` }}
+            >
+              <span>{label}</span>
+              <span
+                className={`rounded-full px-1 py-px text-[10px] font-bold tabular-nums ${
+                  active
+                    ? "bg-white/20 text-white"
+                    : "bg-neutral-100 text-neutral-500 dark:bg-neutral-800 dark:text-neutral-400"
+                }`}
+              >
+                {count}
+              </span>
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
 const MAX_HISTORY = 8;
-const STICKY_SCROLL_THRESHOLD = 100; // px from top before search bar becomes sticky
+const STICKY_SCROLL_THRESHOLD = 100; // px desde arriba antes de que la barra de búsqueda se fije
 
 // Hook de debounce personalizado
 function useDebounce<T>(value: T, delay: number): T {
@@ -40,15 +122,18 @@ export default function SearchClient() {
   const [selectedDescriptores, setSelectedDescriptores] = useState<string[]>(
     [],
   );
+  const [selectedResultados, setSelectedResultados] = useState<ResultadoType[]>([]);
+  const [selectedTipos, setSelectedTipos] = useState<TipoProcedimientoType[]>([]);
   const [highlightEnabled, setHighlightEnabled] = useState(true);
   const [page, setPage] = useState(1);
   const [searchHistory, setSearchHistory] = useState<string[]>([]);
   const [showHistory, setShowHistory] = useState(false);
+  const [activeHistoryIndex, setActiveHistoryIndex] = useState(-1);
   const inputRef = useRef<HTMLInputElement>(null);
   const historyRef = useRef<HTMLDivElement>(null);
   const { allItems, search, searchResults, error } = useSearchIndex();
 
-  // Load search history from localStorage on mount
+  // Cargar historial de búsqueda desde localStorage al montar
   useEffect(() => {
     try {
       const stored = localStorage.getItem(HISTORY_KEY);
@@ -59,12 +144,12 @@ export default function SearchClient() {
   // Debounce de la consulta de búsqueda (300ms)
   const debouncedQuery = useDebounce(query, 300);
 
-  // Computar años disponibles para los filtros de fecha
+  // Computar años disponibles para los filtros de fecha — usa anio (int) directamente
   const availableYears = useMemo(() => {
     const years = new Set<number>();
     allItems.forEach((item) => {
-      const year = item.metadatos?.fecha?.split("/")[2];
-      if (year) years.add(parseInt(year));
+      const y = item.metadatos?.anio;
+      if (y) years.add(y);
     });
     return Array.from(years).sort();
   }, [allItems]);
@@ -73,9 +158,8 @@ export default function SearchClient() {
   const dateFilteredResults = useMemo(() => {
     if (!yearFrom && !yearTo) return searchResults;
     return searchResults.filter((item) => {
-      const year = item.metadatos?.fecha?.split("/")[2];
-      if (!year) return true;
-      const y = parseInt(year);
+      const y = item.metadatos?.anio;
+      if (!y) return true;
       if (yearFrom && y < yearFrom) return false;
       if (yearTo && y > yearTo) return false;
       return true;
@@ -101,7 +185,7 @@ export default function SearchClient() {
   // Resetear página cuando cambia la consulta o cualquier filtro
   useEffect(() => {
     setPage(1);
-  }, [debouncedQuery, yearFrom, yearTo, selectedDescriptores]);
+  }, [debouncedQuery, yearFrom, yearTo, selectedDescriptores, selectedResultados, selectedTipos]);
 
   // Filtrar por descriptores seleccionados (OR: coincide con cualquiera)
   const descriptorFilteredResults = useMemo(() => {
@@ -111,14 +195,42 @@ export default function SearchClient() {
     );
   }, [dateFilteredResults, selectedDescriptores]);
 
-  // Detectar scroll para aplicar sticky
+  // Filtrar por resultado (OR)
+  const resultadoFilteredResults = useMemo(() => {
+    if (selectedResultados.length === 0) return descriptorFilteredResults;
+    return descriptorFilteredResults.filter((item) =>
+      item.metadatos?.resultado
+        ? selectedResultados.includes(item.metadatos.resultado)
+        : false,
+    );
+  }, [descriptorFilteredResults, selectedResultados]);
+
+  // Filtrar por tipo de procedimiento (OR)
+  const tipoFilteredResults = useMemo(() => {
+    if (selectedTipos.length === 0) return resultadoFilteredResults;
+    return resultadoFilteredResults.filter((item) =>
+      item.metadatos?.tipo_procedimiento
+        ? selectedTipos.includes(item.metadatos.tipo_procedimiento)
+        : false,
+    );
+  }, [resultadoFilteredResults, selectedTipos]);
+
+  // Detectar scroll para aplicar sticky — throttled via rAF to one update per frame
   useEffect(() => {
+    let rafId: number | null = null;
     const handleScroll = () => {
-      setIsSticky(window.scrollY > STICKY_SCROLL_THRESHOLD);
+      if (rafId !== null) return;
+      rafId = requestAnimationFrame(() => {
+        setIsSticky(window.scrollY > STICKY_SCROLL_THRESHOLD);
+        rafId = null;
+      });
     };
 
-    window.addEventListener("scroll", handleScroll);
-    return () => window.removeEventListener("scroll", handleScroll);
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => {
+      window.removeEventListener("scroll", handleScroll);
+      if (rafId !== null) cancelAnimationFrame(rafId);
+    };
   }, []);
 
   // Activar FlexSearch cuando cambia la consulta de debounce
@@ -143,7 +255,7 @@ export default function SearchClient() {
     });
   }, [debouncedQuery]);
 
-  // Close history dropdown when clicking outside
+  // Cerrar el desplegable de historial al hacer clic fuera
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
       if (
@@ -153,24 +265,47 @@ export default function SearchClient() {
         !inputRef.current.contains(e.target as Node)
       ) {
         setShowHistory(false);
+        setActiveHistoryIndex(-1);
       }
     };
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  // Manejar atajos de teclado
+  // Manejar atajos de teclado — incluye navegación por el historial (combobox ARIA pattern)
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent<HTMLInputElement>) => {
-      if (e.key === "Escape") {
-        if (query) {
-          setQuery("");
-        } else {
+      const historyVisible = showHistory && !query && searchHistory.length > 0;
+
+      if (e.key === "ArrowDown") {
+        if (!historyVisible) return;
+        e.preventDefault();
+        setActiveHistoryIndex((prev) =>
+          prev < searchHistory.length - 1 ? prev + 1 : 0,
+        );
+      } else if (e.key === "ArrowUp") {
+        if (!historyVisible) return;
+        e.preventDefault();
+        setActiveHistoryIndex((prev) =>
+          prev > 0 ? prev - 1 : searchHistory.length - 1,
+        );
+      } else if (e.key === "Enter") {
+        if (historyVisible && activeHistoryIndex >= 0) {
+          e.preventDefault();
+          setQuery(searchHistory[activeHistoryIndex]);
           setShowHistory(false);
+          setActiveHistoryIndex(-1);
+        }
+      } else if (e.key === "Escape") {
+        if (historyVisible) {
+          setShowHistory(false);
+          setActiveHistoryIndex(-1);
+        } else if (query) {
+          setQuery("");
         }
       }
     },
-    [query],
+    [query, showHistory, searchHistory, activeHistoryIndex],
   );
 
   // Scroll suave al inicio
@@ -188,14 +323,14 @@ export default function SearchClient() {
           role="alert"
           className="mb-4 rounded-lg border border-red-200 bg-red-50 p-4 text-red-700 dark:border-red-800 dark:bg-red-900/30 dark:text-red-300 animate-slide-down"
         >
-          <p className="font-medium">Error al cargar datos</p>
-          <p className="text-sm">{error}</p>
+          <p className="font-medium">No se pudo cargar el índice de resoluciones</p>
+          <p className="text-sm mt-0.5">{error}. Recarga la página para intentarlo de nuevo.</p>
         </div>
       )}
 
       {/* Sticky Search Bar */}
       <div
-        className={`sticky top-0 z-40 transition-all duration-300 ${
+        className={`sticky top-0 z-40 transition-all duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] ${
           isSticky
             ? "bg-white/95 dark:bg-neutral-950/95 backdrop-blur-md shadow-lg py-2 -mx-4 px-4 sm:-mx-6 sm:px-6"
             : "bg-transparent"
@@ -237,13 +372,18 @@ export default function SearchClient() {
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               onKeyDown={handleKeyDown}
-              onFocus={() => setShowHistory(true)}
-              placeholder="Buscar resoluciones..."
+              onFocus={() => { setShowHistory(true); setActiveHistoryIndex(-1); }}
+              placeholder="Buscar por texto, expediente o tema jurídico..."
               role="combobox"
               aria-expanded={showHistory && !query && searchHistory.length > 0}
               aria-haspopup="listbox"
               aria-autocomplete="list"
               aria-controls="search-history-listbox"
+              aria-activedescendant={
+                showHistory && !query && activeHistoryIndex >= 0
+                  ? `history-option-${activeHistoryIndex}`
+                  : undefined
+              }
               aria-label="Buscar resoluciones"
               aria-describedby="search-hint"
               autoComplete="off"
@@ -307,17 +447,25 @@ export default function SearchClient() {
                     Borrar
                   </button>
                 </div>
-                {searchHistory.map((h) => (
+                {searchHistory.map((h, idx) => (
                   <button
                     key={h}
+                    id={`history-option-${idx}`}
                     role="option"
-                    aria-selected={false}
+                    aria-selected={idx === activeHistoryIndex}
                     onMouseDown={(e) => {
                       e.preventDefault();
                       setQuery(h);
                       setShowHistory(false);
+                      setActiveHistoryIndex(-1);
                     }}
-                    className="flex w-full items-center gap-3 px-3 py-2.5 text-sm text-neutral-700 hover:bg-neutral-50 dark:text-neutral-300 dark:hover:bg-neutral-800 transition-colors text-left"
+                    onMouseEnter={() => setActiveHistoryIndex(idx)}
+                    onMouseLeave={() => setActiveHistoryIndex(-1)}
+                    className={`flex w-full items-center gap-3 px-3 py-2.5 text-sm text-neutral-700 dark:text-neutral-300 transition-colors text-left ${
+                      idx === activeHistoryIndex
+                        ? "bg-neutral-100 dark:bg-neutral-800"
+                        : "hover:bg-neutral-50 dark:hover:bg-neutral-800"
+                    }`}
                   >
                     <svg
                       className="h-3.5 w-3.5 text-neutral-400 flex-shrink-0"
@@ -341,13 +489,14 @@ export default function SearchClient() {
           </div>
           {query && (
             <p
+              role="status"
               aria-live="polite"
               aria-atomic="true"
               className="text-xs text-neutral-500 dark:text-neutral-400 flex items-center flex-wrap gap-1.5"
             >
-              {descriptorFilteredResults.length} resultado
-              {descriptorFilteredResults.length !== 1 ? "s" : ""} encontrado
-              {descriptorFilteredResults.length !== 1 ? "s" : ""}
+              {tipoFilteredResults.length === 1
+                ? "1 resolución encontrada"
+                : `${tipoFilteredResults.length} resoluciones encontradas`}
               {(yearFrom || yearTo) && (
                 <span className="rounded-full bg-blue-100 px-1.5 py-0.5 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300 font-medium">
                   {yearFrom ?? "…"}–{yearTo ?? "…"}
@@ -359,6 +508,22 @@ export default function SearchClient() {
                   className="rounded-full bg-indigo-100 px-1.5 py-0.5 text-indigo-700 dark:bg-indigo-900/40 dark:text-indigo-300 font-medium"
                 >
                   {DESCRIPTOR_LABELS[d] ?? d}
+                </span>
+              ))}
+              {selectedResultados.map((r) => (
+                <span
+                  key={r}
+                  className="rounded-full bg-neutral-200 px-1.5 py-0.5 text-neutral-700 dark:bg-neutral-700 dark:text-neutral-200 font-medium"
+                >
+                  {RESULTADO_LABELS[r] ?? r}
+                </span>
+              ))}
+              {selectedTipos.map((t) => (
+                <span
+                  key={t}
+                  className="rounded-full bg-neutral-200 px-1.5 py-0.5 text-neutral-700 dark:bg-neutral-700 dark:text-neutral-200 font-medium"
+                >
+                  {TIPO_LABELS[t] ?? t}
                 </span>
               ))}
             </p>
@@ -383,7 +548,18 @@ export default function SearchClient() {
         descriptorCounts={descriptorCounts}
         highlightEnabled={highlightEnabled}
         setHighlightEnabled={setHighlightEnabled}
+        selectedResultados={selectedResultados}
+        setSelectedResultados={setSelectedResultados}
+        selectedTipos={selectedTipos}
+        setSelectedTipos={setSelectedTipos}
         isSearching={debouncedQuery.length > 0}
+      />
+
+      <DescriptorChipStrip
+        isSearching={debouncedQuery.length > 0}
+        descriptorCounts={descriptorCounts}
+        selectedDescriptores={selectedDescriptores}
+        setSelectedDescriptores={setSelectedDescriptores}
       />
 
       <SearchResults
@@ -392,7 +568,7 @@ export default function SearchClient() {
         similarityThreshold={similarityThreshold}
         relatedLimit={relatedLimit}
         filteredItems={
-          debouncedQuery.length > 0 ? descriptorFilteredResults : allItems
+          debouncedQuery.length > 0 ? tipoFilteredResults : allItems
         }
         isSearching={debouncedQuery.length > 0}
         useFlexSearch={debouncedQuery.length > 0}
@@ -400,6 +576,7 @@ export default function SearchClient() {
         selectedDescriptores={selectedDescriptores}
         page={page}
         setPage={setPage}
+        totalItems={allItems.length}
       />
 
       {/* Botón flotante para volver arriba */}

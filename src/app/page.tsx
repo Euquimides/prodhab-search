@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Footer from "@/components/Footer";
 import { DarkModeToggle } from "@/components/DarkModeToggle";
 import { Suspense } from "react";
@@ -14,39 +15,43 @@ export default function SearchPage() {
         Ir al contenido principal
       </a>
 
-      {/* Dark mode toggle */}
-      <div className="flex justify-end px-4 sm:px-6 pt-4 sm:pt-6">
-        <DarkModeToggle />
-      </div>
+      <main id="main-content" className="mx-auto max-w-4xl px-4 sm:px-6">
+        {/* Barra superior: toggle de tema alineado al contenido */}
+        <div className="flex justify-center pt-4 sm:pt-5">
+          <DarkModeToggle />
+        </div>
 
-      <main id="main-content" className="mx-auto max-w-4xl px-4 sm:px-6 py-6 sm:py-10 md:py-14">
         {/* Header */}
-        <div className="mb-6 sm:mb-10 flex flex-col items-center">
-          <img
+        <div className="mb-8 sm:mb-12 mt-4 sm:mt-6 flex flex-col items-center">
+          <Image
             src="/privatasearch_logo.png"
             alt="PrivataSearch"
-            width={80}
-            height={80}
-            className="mb-3 sm:mb-4 w-16 sm:w-20 h-auto"
+            width={72}
+            height={72}
+            priority
+            className="mb-4 w-14 sm:w-18 h-auto"
           />
-          <h1 className="mb-1.5 text-2xl sm:text-3xl font-bold tracking-tight text-neutral-900 dark:text-neutral-100 md:text-4xl text-center">
+          <h1 className="mb-2 text-2xl sm:text-3xl font-bold tracking-tight text-neutral-900 dark:text-neutral-100 md:text-4xl text-center">
             PrivataSearch
           </h1>
-          <p className="text-sm sm:text-base text-neutral-500 dark:text-neutral-400 text-center px-4">
-            Buscador de resoluciones sobre protección de datos personales en Costa Rica
+          <p className="text-sm sm:text-base text-neutral-500 dark:text-neutral-400 text-center max-w-lg">
+            Resoluciones de la Agencia de Protección de Datos (PRODHAB) de Costa Rica
           </p>
         </div>
 
         {/* Client-side buscador UI */}
         <Suspense
           fallback={
-            <div className="text-center py-12 text-sm sm:text-base text-neutral-500">
+            <div className="text-center py-12 text-sm text-neutral-500">
               Cargando buscador...
             </div>
           }
         >
           <SearchClient />
         </Suspense>
+
+        {/* Espacio de respiro antes del footer */}
+        <div className="h-12 sm:h-16" />
       </main>
       <Footer />
     </div>

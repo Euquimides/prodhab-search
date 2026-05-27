@@ -1,3 +1,4 @@
+import Link from "next/link";
 import Footer from "@/components/Footer";
 import { DarkModeToggle } from "@/components/DarkModeToggle";
 
@@ -9,16 +10,16 @@ export default function DisclaimerPage() {
       </div>
 
       <div className="mx-auto max-w-4xl px-6 py-8 md:py-12 flex-1">
-        <a
+        <Link
           href="/"
           className="inline-flex items-center text-sm text-blue-600 dark:text-blue-400 hover:underline mb-6"
         >
           ← Volver al buscador
-        </a>
+        </Link>
         <h1 className="mb-8 text-3xl font-bold tracking-tight text-neutral-900 dark:text-neutral-100 md:text-4xl">
           Descargo de Responsabilidad
         </h1>
-        <div className="text-neutral-800 dark:text-neutral-200 text-base leading-relaxed">
+        <div className="text-neutral-800 dark:text-neutral-200 text-base leading-relaxed max-w-prose">
           <h2 className="text-xl font-semibold text-neutral-900 dark:text-neutral-100 mt-0 mb-3">
             Información General
           </h2>

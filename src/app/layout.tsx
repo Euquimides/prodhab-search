@@ -1,4 +1,5 @@
 import { Inter } from "next/font/google";
+import Script from "next/script";
 import { SearchProvider } from "@/context/SearchContext";
 import "./globals.css";
 
@@ -25,7 +26,7 @@ export default function RootLayout({
 }: {
   children: React.ReactNode;
 }) {
-  // suppressHydrationWarning: dark mode class is injected by inline script before hydration
+  // suppressHydrationWarning: la clase de modo oscuro es inyectada por script inline antes de la hidratación
   return (
     <html lang="es" className={inter.variable} suppressHydrationWarning>
       <head>
@@ -43,7 +44,7 @@ export default function RootLayout({
             __html: `
               try {
                 var t = localStorage.getItem('ps_theme');
-                if (t !== 'light') {
+                if (t === 'dark') {
                   document.documentElement.classList.add('dark');
                 }
               } catch {}
@@ -72,6 +73,11 @@ export default function RootLayout({
       </head>
       <body>
         <SearchProvider>{children}</SearchProvider>
+        <Script
+          src="https://chat.crafterq.ai/embed.js"
+          data-q-id="019e6736-9b8d-759d-a527-7ddf26988800"
+          strategy="afterInteractive"
+        />
       </body>
     </html>
   );

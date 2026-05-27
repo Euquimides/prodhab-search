@@ -1,3 +1,6 @@
+import Image from "next/image";
+import Link from "next/link";
+
 export default function Footer() {
 
   return (
@@ -12,14 +15,19 @@ export default function Footer() {
               href="https://www.vasquezdrexler.abogado/"
               className="transition-opacity hover:opacity-80"
             >
-              <img
+              <Image
                 src="/logo_light.png"
                 alt="Vasquez Drexler — sitio web del autor"
+                width={160}
+                height={56}
                 className="h-12 sm:h-14 w-auto block dark:hidden"
               />
-              <img
+              <Image
                 src="/logo.png"
-                alt="Vasquez Drexler — sitio web del autor"
+                alt="Vasquez Drexler"
+                aria-hidden="true"
+                width={160}
+                height={56}
                 className="h-12 sm:h-14 w-auto hidden dark:block"
               />
             </a>
@@ -39,21 +47,21 @@ export default function Footer() {
             <span className="hidden sm:inline text-neutral-300 dark:text-neutral-700">
               ·
             </span>
-            <a
+            <Link
               href="/estadisticas"
               className="py-2 -my-2 px-1 -mx-1 text-xs text-neutral-500 hover:underline dark:text-neutral-400"
             >
               Estadísticas
-            </a>
+            </Link>
             <span className="hidden sm:inline text-neutral-300 dark:text-neutral-700">
               ·
             </span>
-            <a
+            <Link
               href="/disclaimer"
               className="py-2 -my-2 px-1 -mx-1 text-xs text-neutral-500 hover:underline dark:text-neutral-400"
             >
               Descargo de responsabilidad
-            </a>
+            </Link>
           </div>
         </div>
       </div>
