@@ -12,6 +12,11 @@ html {
   --foreground: #171717;
   --primary: rgb(37 99 235);
   --slider-track-empty: rgb(229 229 229);
+
+  /* Easing vocabulary — exponential ease-out curves, used across all animations */
+  --ease-out-quart: cubic-bezier(0.25, 1, 0.5, 1);
+  --ease-out-quint: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-out-expo:  cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 @theme inline {
@@ -24,6 +29,11 @@ html {
   --foreground: #ededed;
 
   --slider-track-empty: rgb(64 64 64);
+}
+
+/* Native select dropdown options inherit the OS dark theme */
+.dark select {
+  color-scheme: dark;
 }
 
 body {
@@ -75,28 +85,37 @@ body {
   }
 }
 
+@keyframes chipIn {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 
 /* Clases de utilidad para animaciones */
 .animate-fade-in {
-  animation: fadeIn 0.3s ease-out;
+  animation: fadeIn 0.25s var(--ease-out-quart) both;
 }
 
 .animate-slide-up {
-  animation: slideUp 0.4s ease-out;
+  animation: slideUp 0.4s var(--ease-out-expo) both;
 }
 
 .animate-slide-down {
-  animation: slideDown 0.3s ease-out;
+  animation: slideDown 0.25s var(--ease-out-quart) both;
 }
 
 .animate-scale-in {
-  animation: scaleIn 0.3s ease-out;
+  animation: scaleIn 0.3s var(--ease-out-expo) both;
 }
 
-/* Transiciones suaves — aplica solo a elementos interactivos y los que ya usan transition */
-a, button, input, select, textarea,
-[class*="transition"], [class*="animate"] {
-  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+.animate-chip-in {
+  animation: chipIn 0.2s var(--ease-out-quart) both;
 }
 
 /* Reducir movimiento para usuarios sensibles al movimiento */

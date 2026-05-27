@@ -162,6 +162,31 @@ export function tagDescriptores(texto: string): string[] {
   );
 }
 
+export type ResultadoType =
+  | "con_lugar"
+  | "sin_lugar"
+  | "parcialmente_con_lugar"
+  | "archivado"
+  | "rechazo_de_plano"
+  | "otro";
+
+export type TipoProcedimientoType = "DEN" | "RECONSIDERACION" | "REVOCATORIA";
+
+export const RESULTADO_LABELS: Record<ResultadoType, string> = {
+  con_lugar: "Con lugar",
+  sin_lugar: "Sin lugar",
+  parcialmente_con_lugar: "Parcialmente con lugar",
+  archivado: "Archivado",
+  rechazo_de_plano: "Rechazo de plano",
+  otro: "Otro",
+};
+
+export const TIPO_LABELS: Record<TipoProcedimientoType, string> = {
+  DEN: "Denuncia",
+  RECONSIDERACION: "Reconsideración",
+  REVOCATORIA: "Revocatoria",
+};
+
 export interface ResolutionItem {
   id: string;
   titulo: string;
@@ -169,7 +194,18 @@ export interface ResolutionItem {
   metadatos: {
     expediente?: string;
     resolucion?: string;
+    anio?: number | null;
+    tipo_procedimiento?: TipoProcedimientoType | null;
     fecha?: string;
+    hora?: string;
+    lugar?: string;
+    denunciante?: string;
+    denunciado?: string;
+    resultado?: ResultadoType;
+    recurso_disponible?: string | null;
+    firmante?: string;
+    elaborado_por?: string;
+    resoluciones_citadas?: string[];
     archivo_origen?: string;
   };
   vector?: number[];

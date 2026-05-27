@@ -67,48 +67,48 @@ export function RelatedResolutions({
   const hasMore = filteredItems.length > maxItems;
 
   return (
-    <div className="rounded-lg border border-neutral-200 bg-neutral-50 p-4 dark:border-neutral-800 dark:bg-neutral-900/50">
-      <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+    <div>
+      <div className="mb-3 flex items-center justify-between gap-3">
         <div className="flex items-center gap-3">
           <h3 className="text-sm font-semibold text-neutral-900 dark:text-neutral-100">
-            Resoluciones Relacionadas
-            <span className="ml-2 text-xs font-normal text-neutral-500 dark:text-neutral-400">
+            Resoluciones relacionadas
+            <span className="ml-1.5 text-xs font-normal text-neutral-500 dark:text-neutral-400">
               ({filteredItems.length})
             </span>
           </h3>
           {showVisualization && (
-            <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2 text-xs text-neutral-500 dark:text-neutral-400">
-              <span>Similitud:</span>
-              <div className="flex flex-wrap items-center gap-1">
-                <div className="h-2 w-2 rounded-full bg-green-500" aria-hidden="true"></div>
-                <span className="text-xs">Alta</span>
-                <div className="ml-2 h-2 w-2 rounded-full bg-blue-500" aria-hidden="true"></div>
-                <span className="text-xs">Media</span>
-                <div className="ml-2 h-2 w-2 rounded-full bg-yellow-500" aria-hidden="true"></div>
-                <span className="text-xs">Baja</span>
-              </div>
+            <div className="flex items-center gap-2 text-xs text-neutral-400 dark:text-neutral-500">
+              <span className="flex items-center gap-1">
+                <span className="inline-block h-1.5 w-1.5 rounded-full bg-blue-500" aria-hidden="true" />
+                Alta
+              </span>
+              <span className="flex items-center gap-1">
+                <span className="inline-block h-1.5 w-1.5 rounded-full bg-blue-400/60" aria-hidden="true" />
+                Media
+              </span>
+              <span className="flex items-center gap-1">
+                <span className="inline-block h-1.5 w-1.5 rounded-full bg-neutral-400" aria-hidden="true" />
+                Baja
+              </span>
             </div>
           )}
         </div>
-        {/* Botones para expandir/colapsar todos los textos relacionados */}
-        {filteredItems.length > 0 && (
-          <div className="flex gap-2 mt-2 sm:mt-0 w-full sm:w-auto">
-            <button
-              onClick={handleExpandAll}
-              aria-label="Ver texto de todas las resoluciones relacionadas"
-              className="flex-1 sm:flex-none rounded-md border border-blue-200 bg-blue-50 px-3 py-3 sm:py-2 text-xs font-medium text-blue-700 hover:bg-blue-100 hover:shadow-sm active:scale-95 transition-all duration-200 dark:border-blue-800 dark:bg-blue-900/30 dark:text-blue-300 dark:hover:bg-blue-900/50"
-            >
-              Ver todos
-            </button>
-            <button
-              onClick={handleCollapseAll}
-              aria-label="Colapsar texto de todas las resoluciones relacionadas"
-              className="flex-1 sm:flex-none rounded-md border border-neutral-200 bg-neutral-50 px-3 py-3 sm:py-2 text-xs font-medium text-neutral-700 hover:bg-neutral-200 hover:shadow-sm active:scale-95 transition-all duration-200 dark:border-neutral-700 dark:bg-neutral-900/30 dark:text-neutral-300 dark:hover:bg-neutral-800"
-            >
-              Colapsar todos
-            </button>
-          </div>
-        )}
+        <div className="flex items-center gap-3">
+          <button
+            onClick={handleExpandAll}
+            aria-label="Ver texto de todas las resoluciones relacionadas"
+            className="py-2 -my-2 px-1 -mx-1 text-xs text-neutral-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+          >
+            Ver todos
+          </button>
+          <button
+            onClick={handleCollapseAll}
+            aria-label="Colapsar texto de todas las resoluciones relacionadas"
+            className="py-2 -my-2 px-1 -mx-1 text-xs text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200 transition-colors"
+          >
+            Colapsar
+          </button>
+        </div>
       </div>
 
       <ul className="space-y-2">
@@ -132,7 +132,7 @@ export function RelatedResolutions({
                         </span>
                       )}
                       {item.resolucion && (
-                        <span className="rounded-md bg-green-100 px-2.5 py-1 text-xs font-medium text-green-700 dark:bg-green-900/50 dark:text-green-300">
+                        <span className="rounded-md bg-neutral-100 px-2.5 py-1 text-xs font-medium text-neutral-600 dark:bg-neutral-800 dark:text-neutral-300">
                           Res: {item.resolucion}
                         </span>
                       )}
@@ -152,7 +152,7 @@ export function RelatedResolutions({
                       target="_blank"
                       rel="noopener noreferrer"
                       aria-label={`Descargar resolución${item.resolucion ? ": " + item.resolucion : item.expediente ? " " + item.expediente : ""}`}
-                      className="inline-flex items-center gap-1.5 rounded-md border border-neutral-300 bg-white px-3 py-2 sm:py-1.5 text-xs font-medium text-neutral-700 transition-colors hover:bg-neutral-50 hover:border-neutral-400 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-300 dark:hover:bg-neutral-800 dark:hover:border-neutral-600"
+                      className="inline-flex items-center gap-1.5 rounded-md border border-neutral-300 bg-white px-3 py-2 sm:py-1.5 text-xs font-medium text-neutral-700 transition-all duration-200 hover:bg-neutral-50 hover:border-neutral-400 active:scale-95 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-300 dark:hover:bg-neutral-800 dark:hover:border-neutral-600"
                       title="Descargar Resolución"
                     >
                       <Download className="h-3.5 w-3.5" aria-hidden="true" />
@@ -173,14 +173,14 @@ export function RelatedResolutions({
                   >
                     <div className="h-1.5 w-full overflow-hidden rounded-full bg-neutral-200 dark:bg-neutral-700">
                       <div
-                        className={`h-full transition-all ${
+                        className={`h-full transition-all duration-300 ease-[cubic-bezier(0.25,1,0.5,1)] ${
                           item.similarity >= 0.7
-                            ? "bg-green-500"
+                            ? "bg-blue-500"
                             : item.similarity >= 0.6
-                              ? "bg-blue-500"
+                              ? "bg-blue-400/70"
                               : item.similarity >= 0.4
-                                ? "bg-yellow-500"
-                                : "bg-neutral-400"
+                                ? "bg-neutral-400"
+                                : "bg-neutral-300"
                         }`}
                         style={{ width: `${item.similarity * 100}%` }}
                       ></div>
@@ -223,14 +223,13 @@ export function RelatedResolutions({
         })}
       </ul>
 
-      {/* Botón para mostrar más/menos */}
       {hasMore && (
         <button
           onClick={() => setExpanded(!expanded)}
-          className="mt-3 w-full rounded-md border border-neutral-300 bg-white px-3 py-3 sm:py-2 text-xs font-medium text-neutral-700 transition-colors hover:bg-neutral-50 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-300 dark:hover:bg-neutral-700"
+          className="mt-3 text-xs text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200 transition-colors"
         >
           {expanded
-            ? `Mostrar menos`
+            ? "Mostrar menos"
             : `Mostrar ${filteredItems.length - maxItems} más`}
         </button>
       )}

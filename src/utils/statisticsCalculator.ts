@@ -8,10 +8,26 @@ export interface DataRecord {
   metadatos: {
     expediente?: string;
     resolucion?: string;
+    anio?: number | null;
     fecha?: string;
+    hora?: string | null;
+    lugar?: string | null;
+    resultado?: string;
+    tipo_procedimiento?: string | null;
+    denunciante?: string | null;
+    denunciado?: string;
+    recurso_disponible?: string | null;
+    firmante?: string;
+    elaborado_por?: string | null;
+    resoluciones_citadas?: string[];
     archivo_origen?: string;
   };
   titulo: string;
+  secciones?: {
+    resultando?: string;
+    considerando?: string;
+    por_tanto?: string;
+  };
   texto: string;
   vector?: number[];
 }
@@ -25,7 +41,9 @@ export interface DatasetMetadata {
   idioma: string;
   formato: string;
   total_registros: number;
-  modelo_ia_utilizado: string;
+  modelo_embedding?: string;
+  dimension_embedding?: number;
+  modelo_ia_utilizado?: string; // legacy field
 }
 
 export interface Dataset {
@@ -92,7 +110,15 @@ export interface DatasetStatistics {
     fecha: number;
     vector: number;
     archivoOrigen: number;
+    denunciante: number;
+    recursoDisponible: number;
+    elaboradoPor: number;
+    secciones: number;
   };
+  recursoDisponibleDistribution: { [recurso: string]: number };
+  resultadoDistribution: { [resultado: string]: number };
+  tipoProcedimientoDistribution: { [tipo: string]: number };
+  firmantesTop: { firmante: string; count: number }[];
   vectorLengthStats: BasicStats | null;
   vectorNormStats: BasicStats | null;
   vectorDimensionStats: VectorDimensionStats[];
@@ -105,12 +131,12 @@ export interface DatasetStatistics {
 
 // Funciones auxiliares
 function parseDate(dateStr: string): Date | null {
-  // Formato: DD/MM/AAAA
-  const parts = dateStr.split('/');
+  // Formato: YYYY-MM-DD
+  const parts = dateStr.split('-');
   if (parts.length === 3) {
-    const day = parseInt(parts[0], 10);
+    const year = parseInt(parts[0], 10);
     const month = parseInt(parts[1], 10) - 1;
-    const year = parseInt(parts[2], 10);
+    const day = parseInt(parts[2], 10);
     const date = new Date(year, month, day);
     if (!isNaN(date.getTime())) {
       return date;
@@ -359,7 +385,16 @@ export function calculateStatistics(dataset: Dataset): DatasetStatistics {
     fecha: 0,
     vector: 0,
     archivoOrigen: 0,
+    denunciante: 0,
+    recursoDisponible: 0,
+    elaboradoPor: 0,
+    secciones: 0,
   };
+
+  const recursoDisponibleDistribution: { [recurso: string]: number } = {};
+  const resultadoDistribution: { [resultado: string]: number } = {};
+  const tipoProcedimientoDistribution: { [tipo: string]: number } = {};
+  const firmanteCounts: { [firmante: string]: number } = {};
   
   // Seguimiento de fechas
   let earliestDate: Date | null = null;
@@ -416,14 +451,50 @@ export function calculateStatistics(dataset: Dataset): DatasetStatistics {
     
     // Archivo origen
     if (meta.archivo_origen) {
-      // Extrae el nombre de archivo del URL para agrupar
       const parts = meta.archivo_origen.split('/');
       const filename = parts[parts.length - 1] || meta.archivo_origen;
       recordsPerSourceFile[filename] = (recordsPerSourceFile[filename] || 0) + 1;
     } else {
       missingMetadata.archivoOrigen++;
     }
-    
+
+    // Resultado
+    if (meta.resultado) {
+      resultadoDistribution[meta.resultado] = (resultadoDistribution[meta.resultado] || 0) + 1;
+    }
+
+    // Tipo de procedimiento
+    if (meta.tipo_procedimiento) {
+      tipoProcedimientoDistribution[meta.tipo_procedimiento] = (tipoProcedimientoDistribution[meta.tipo_procedimiento] || 0) + 1;
+    }
+
+    // Firmante
+    if (meta.firmante) {
+      firmanteCounts[meta.firmante] = (firmanteCounts[meta.firmante] || 0) + 1;
+    }
+
+    // Denunciante
+    if (!meta.denunciante) {
+      missingMetadata.denunciante++;
+    }
+
+    // Recurso disponible
+    if (meta.recurso_disponible) {
+      recursoDisponibleDistribution[meta.recurso_disponible] = (recursoDisponibleDistribution[meta.recurso_disponible] || 0) + 1;
+    } else {
+      missingMetadata.recursoDisponible++;
+    }
+
+    // Elaborado por
+    if (!meta.elaborado_por) {
+      missingMetadata.elaboradoPor++;
+    }
+
+    // Secciones
+    if (!record.secciones) {
+      missingMetadata.secciones++;
+    }
+
     // Vector
     if (record.vector && Array.isArray(record.vector) && record.vector.length > 0) {
       vectorLengths.push(record.vector.length);
@@ -566,6 +637,12 @@ export function calculateStatistics(dataset: Dataset): DatasetStatistics {
     };
   }
   
+  // Top firmantes
+  const firmantesTop = Object.entries(firmanteCounts)
+    .map(([firmante, count]) => ({ firmante, count }))
+    .sort((a, b) => b.count - a.count)
+    .slice(0, 10);
+
   // Distribución de idioma y licencia (desde los metadatos del conjunto de datos)
   const languageDistribution: { [lang: string]: number } = {
     [metadatos.idioma || 'unknown']: totalRecords,
@@ -591,5 +668,9 @@ export function calculateStatistics(dataset: Dataset): DatasetStatistics {
     vectorDimensionStats,
     vectorValueDistribution,
     clusterAnalysis,
+    recursoDisponibleDistribution,
+    resultadoDistribution,
+    tipoProcedimientoDistribution,
+    firmantesTop,
   };
 }

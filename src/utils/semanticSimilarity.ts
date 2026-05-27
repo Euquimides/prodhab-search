@@ -18,7 +18,7 @@ export function cosineSimilarity(vecA: number[], vecB: number[]): number {
   }
 
   if (dot === 0) return 0;
-  // Single sqrt instead of two: sqrt(a) * sqrt(b) == sqrt(a * b)
+  // Una sola raíz cuadrada en lugar de dos: sqrt(a) * sqrt(b) == sqrt(a * b)
   const denom = Math.sqrt(normA * normB);
   return denom === 0 ? 0 : dot / denom;
 }
@@ -79,7 +79,7 @@ export function findMostSimilar<T extends VectorItem>(
     return d / (na * nb);
   };
 
-  // 1. Calcular similitudes iniciales (norms cached here, reused in MMR)
+  // 1. Calcular similitudes iniciales (normas en caché aquí, reutilizadas en MMR)
   const candidates: ScoredItem<T>[] = [];
 
   for (const item of items) {
@@ -108,7 +108,7 @@ export function findMostSimilar<T extends VectorItem>(
   const pool = candidates.slice(0, poolLimit);
   const selected: ScoredItem<T>[] = [];
 
-  // 5. Bucle MMR — all norms already cached from step 1, zero additional sqrt calls
+  // 5. Bucle MMR
   while (selected.length < topN && pool.length > 0) {
     let bestScore = -Infinity;
     let bestIdx = -1;
@@ -163,28 +163,28 @@ export function getSimilarityColor(similarity: number): {
 } {
   if (similarity >= 0.7) {
     return {
-      text: 'text-green-700 dark:text-green-400',
-      bg: 'bg-green-50 dark:bg-green-950',
-      border: 'border-green-200 dark:border-green-800'
+      text: 'text-blue-700 dark:text-blue-400',
+      bg: 'bg-blue-50 dark:bg-blue-950/40',
+      border: 'border-blue-200 dark:border-blue-900'
     };
   }
   if (similarity >= 0.6) {
     return {
-      text: 'text-blue-700 dark:text-blue-400',
-      bg: 'bg-blue-50 dark:bg-blue-950',
-      border: 'border-blue-200 dark:border-blue-800'
+      text: 'text-neutral-600 dark:text-neutral-400',
+      bg: 'bg-neutral-50 dark:bg-neutral-900',
+      border: 'border-neutral-200 dark:border-neutral-800'
     };
   }
   if (similarity >= 0.4) {
     return {
-      text: 'text-yellow-700 dark:text-yellow-400',
-      bg: 'bg-yellow-50 dark:bg-yellow-950',
-      border: 'border-yellow-200 dark:border-yellow-800'
+      text: 'text-neutral-500 dark:text-neutral-400',
+      bg: 'bg-neutral-50 dark:bg-neutral-900',
+      border: 'border-neutral-200 dark:border-neutral-800'
     };
   }
   return {
-    text: 'text-gray-700 dark:text-gray-400',
-    bg: 'bg-gray-50 dark:bg-gray-900',
-    border: 'border-gray-200 dark:border-gray-700'
+    text: 'text-neutral-400 dark:text-neutral-500',
+    bg: 'bg-neutral-50 dark:bg-neutral-900',
+    border: 'border-neutral-200 dark:border-neutral-800'
   };
 }
