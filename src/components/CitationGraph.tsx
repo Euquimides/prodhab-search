@@ -551,6 +551,7 @@ export default function CitationGraph() {
           ))}
         </div>
         <p className="mt-2 font-mono text-[11px] tracking-wide text-neutral-400 dark:text-neutral-500">Tamaño = veces citada · Flechas = dirección de cita</p>
+        <p className="mt-1 font-mono text-[11px] tracking-wide text-neutral-400 dark:text-neutral-500">Clic izq. rotar · Clic der. desplazar · Rueda zoom</p>
       </div>
 
       {/* Estadísticas del grafo — hidden on mobile */}
