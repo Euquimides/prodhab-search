@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Calendar, FileText } from "lucide-react";
+import { Calendar, ExternalLink } from "lucide-react";
 import {
   getSimilarityLabel,
   getSimilarityColor,
@@ -155,7 +155,7 @@ export function RelatedResolutions({
                       className="inline-flex items-center gap-1.5  border border-neutral-300 bg-white px-3 py-2 sm:py-1.5 text-xs font-medium text-neutral-700 transition-all duration-200 hover:bg-neutral-50 hover:border-neutral-400 active:scale-95 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-300 dark:hover:bg-neutral-800 dark:hover:border-neutral-600"
                       title="Ver PDF"
                     >
-                      <FileText className="h-3.5 w-3.5" aria-hidden="true" />
+                      <ExternalLink className="h-3.5 w-3.5" aria-hidden="true" />
                       <span className="hidden sm:inline">Ver PDF</span>
                     </a>
                   )}

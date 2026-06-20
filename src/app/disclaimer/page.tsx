@@ -7,7 +7,7 @@ export default function DisclaimerPage() {
       <SiteHeader subtitle="Descargo" />
 
       <div className="mx-auto max-w-4xl px-6 py-8 md:py-12 flex-1">
-        <h1 className="mb-8 text-3xl font-bold tracking-tight text-neutral-900 dark:text-neutral-100 md:text-4xl">
+        <h1 className="mb-8 text-3xl font-semibold tracking-tight text-neutral-900 dark:text-neutral-100 md:text-4xl">
           Descargo de Responsabilidad
         </h1>
         <div className="text-neutral-800 dark:text-neutral-200 text-base leading-relaxed max-w-prose">
@@ -83,7 +83,7 @@ export default function DisclaimerPage() {
             establecidos en este descargo de responsabilidad.
           </p>
 
-          <p className="mt-10 text-sm text-neutral-500 dark:text-neutral-400 border-t border-neutral-200 dark:border-neutral-800 pt-6">
+          <p className="mt-10 text-sm text-neutral-500 dark:text-neutral-400 border-t border-neutral-200/80 dark:border-neutral-800/80 pt-6">
             Última actualización: {new Date().toLocaleDateString("es-CR")}
           </p>
         </div>

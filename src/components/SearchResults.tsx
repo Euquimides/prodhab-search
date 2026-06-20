@@ -1,7 +1,7 @@
 import React, { useState, useCallback } from "react";
 import { useSearchIndex, ResolutionItem, DESCRIPTOR_PATTERNS, DESCRIPTOR_LABELS, RESULTADO_LABELS, TIPO_LABELS, ResultadoType } from "@/context/SearchContext";
 import { highlightText, buildQueryPatterns } from "@/utils/highlightText";
-import { FileText, Search, ClipboardCopy, Check, Share2 } from "lucide-react";
+import { ExternalLink, FileText, Search, ClipboardCopy, Check, Share2 } from "lucide-react";
 import Link from "next/link";
 import { formatCitaCR, fmtFecha } from "@/utils/formatters";
 
@@ -37,7 +37,7 @@ const ResultCard = React.memo(function ResultCard({ item, index, highlight, onOp
 
   return (
     <article
-      className="group relative bg-white border border-neutral-200 border-l-blue-500 transition-all hover:bg-neutral-50 hover:border-neutral-300 hover:border-l-blue-500 hover:-translate-y-px cursor-pointer dark:bg-neutral-900 dark:border-neutral-800 dark:border-l-blue-500 dark:hover:bg-neutral-800/60 dark:hover:border-neutral-700 dark:hover:border-l-blue-500 animate-slide-up overflow-hidden focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-neutral-950"
+      className="group relative bg-white border border-neutral-200/80 rounded-xl transition-all hover:bg-neutral-50 hover:border-neutral-300 hover:-translate-y-px cursor-pointer dark:bg-neutral-900 dark:border-neutral-800/80 dark:hover:bg-neutral-800/60 dark:hover:border-neutral-700 animate-slide-up overflow-hidden focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-neutral-950"
       style={{ animationDelay: `${Math.min(index, 4) * 0.05}s` }}
       tabIndex={0}
       role="button"
@@ -46,11 +46,10 @@ const ResultCard = React.memo(function ResultCard({ item, index, highlight, onOp
       onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onOpen(item); } }}
     >
       <div className="p-4 sm:p-5">
-        {/* Top row: badge + resolution + date */}
+        {/* Fila superior: insignia + resolución + fecha */}
         <div className="flex items-center gap-2.5 flex-wrap mb-2">
           {resultado && (
-            <span className={`inline-flex items-center gap-1.5 border px-2 py-0.5 text-[11px] font-bold uppercase tracking-wider ${badgeColor}`}>
-              <span className="w-1.5 h-1.5 rounded-full bg-current" />
+            <span className={`inline-flex items-center border rounded-md px-2 py-0.5 text-[11px] font-medium uppercase tracking-wider ${badgeColor}`}>
               {RESULTADO_LABELS[resultado]}
             </span>
           )}
@@ -65,26 +64,26 @@ const ResultCard = React.memo(function ResultCard({ item, index, highlight, onOp
           )}
         </div>
 
-        {/* Title */}
+        {/* Título */}
         <h3 className="text-base sm:text-lg font-medium leading-snug tracking-tight text-neutral-900 dark:text-neutral-100 mb-2">
           {highlight(item.titulo)}
         </h3>
 
-        {/* Summary / preview text */}
+        {/* Resumen / vista previa */}
         <p className="text-sm text-neutral-600 dark:text-neutral-400 leading-relaxed line-clamp-2 mb-3">
           {highlight(item.texto.slice(0, 250))}
           {item.texto.length > 250 && "…"}
         </p>
 
-        {/* Footer: tipo badge + descriptors + actions */}
+        {/* Pie: insignia de tipo + descriptores + acciones */}
         <div className="flex items-center gap-2 flex-wrap">
           {item.metadatos?.tipo_procedimiento && (
-            <span className="border border-neutral-200 dark:border-neutral-700 px-2 py-0.5 text-[11px] font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
+            <span className="border border-neutral-200/80 dark:border-neutral-700/80 rounded-md px-2 py-0.5 text-[11px] font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
               {TIPO_LABELS[item.metadatos.tipo_procedimiento]}
             </span>
           )}
           {item.descriptores && item.descriptores.slice(0, 3).map((d) => (
-            <span key={d} className="font-mono text-[11px] text-neutral-400 dark:text-neutral-500 border border-neutral-200 dark:border-neutral-700 px-1.5 py-px">
+            <span key={d} className="text-[11px] font-medium text-neutral-400 dark:text-neutral-500 border border-neutral-200/80 dark:border-neutral-700/80 rounded-md px-1.5 py-px">
               {DESCRIPTOR_LABELS[d] ?? d}
             </span>
           ))}
@@ -92,14 +91,14 @@ const ResultCard = React.memo(function ResultCard({ item, index, highlight, onOp
             <span className="text-[11px] text-neutral-400">+{item.descriptores.length - 3}</span>
           )}
           <span className="flex-1" />
-          {/* Cite button */}
+          {/* Botón de cita */}
           <button
             onClick={copiarCita}
             title={citaCopied ? "¡Copiado!" : "Copiar cita"}
-            className={`inline-flex items-center gap-1 border px-3 py-2 sm:px-2 sm:py-1 text-[11px] font-medium transition-all ${
+            className={`inline-flex items-center gap-1 border rounded-md px-3 py-2 sm:px-2.5 sm:py-1.5 min-h-8 text-[11px] font-medium transition-all ${
               citaCopied
                 ? "border-emerald-300 bg-emerald-50 text-emerald-700 dark:border-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300"
-                : "border-neutral-200 bg-white text-neutral-500 hover:border-neutral-400 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-400"
+                : "border-neutral-200/80 bg-white text-neutral-500 hover:border-neutral-400 dark:border-neutral-700/80 dark:bg-neutral-800 dark:text-neutral-400"
             }`}
           >
             {citaCopied ? <Check className="w-3 h-3" /> : <ClipboardCopy className="w-3 h-3" />}
@@ -109,7 +108,7 @@ const ResultCard = React.memo(function ResultCard({ item, index, highlight, onOp
             <Link
               href={`/grafo/#res=${item.metadatos.resolucion}`}
               onClick={(e) => e.stopPropagation()}
-              className="inline-flex items-center gap-1 border border-neutral-200 bg-white px-3 py-2 sm:px-2 sm:py-1 text-[11px] font-medium text-neutral-500 hover:border-neutral-400 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-400 transition-colors"
+              className="inline-flex items-center justify-center gap-1 border border-neutral-200/80 bg-white rounded-md px-3 py-2 sm:px-2.5 sm:py-1.5 min-h-8 min-w-8 text-[11px] font-medium text-neutral-500 hover:border-neutral-400 dark:border-neutral-700/80 dark:bg-neutral-800 dark:text-neutral-400 transition-colors"
               title="Ver en red de citas"
             >
               <Share2 className="w-3 h-3" />
@@ -121,10 +120,10 @@ const ResultCard = React.memo(function ResultCard({ item, index, highlight, onOp
               target="_blank"
               rel="noopener noreferrer"
               onClick={(e) => e.stopPropagation()}
-              className="inline-flex items-center gap-1 border border-neutral-200 bg-white px-3 py-2 sm:px-2 sm:py-1 text-[11px] font-medium text-neutral-500 hover:border-neutral-400 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-400 transition-colors"
+              className="inline-flex items-center justify-center gap-1 border border-neutral-200/80 bg-white rounded-md px-3 py-2 sm:px-2.5 sm:py-1.5 min-h-8 min-w-8 text-[11px] font-medium text-neutral-500 hover:border-neutral-400 dark:border-neutral-700/80 dark:bg-neutral-800 dark:text-neutral-400 transition-colors"
               title="Ver PDF"
             >
-              <FileText className="w-3 h-3" />
+              <ExternalLink className="w-3 h-3" />
             </a>
           )}
         </div>
@@ -292,7 +291,7 @@ export function SearchResults({
               onClick={() => goToPage(safePage - 1)}
               disabled={safePage === 1}
               aria-label="Página anterior"
-              className="border border-neutral-300 bg-white px-4 py-2.5 text-sm font-medium text-neutral-600 hover:bg-neutral-50 disabled:opacity-30 disabled:pointer-events-none dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-400"
+              className="border border-neutral-200/80 bg-white rounded-lg px-4 py-2.5 text-sm font-medium text-neutral-600 hover:bg-neutral-50 disabled:opacity-30 disabled:pointer-events-none dark:border-neutral-700/80 dark:bg-neutral-900 dark:text-neutral-400"
             >
               ‹ Anterior
             </button>
@@ -303,7 +302,7 @@ export function SearchResults({
               onClick={() => goToPage(safePage + 1)}
               disabled={safePage === totalPages}
               aria-label="Página siguiente"
-              className="border border-neutral-300 bg-white px-4 py-2.5 text-sm font-medium text-neutral-600 hover:bg-neutral-50 disabled:opacity-30 disabled:pointer-events-none dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-400"
+              className="border border-neutral-200/80 bg-white rounded-lg px-4 py-2.5 text-sm font-medium text-neutral-600 hover:bg-neutral-50 disabled:opacity-30 disabled:pointer-events-none dark:border-neutral-700/80 dark:bg-neutral-900 dark:text-neutral-400"
             >
               Siguiente ›
             </button>
@@ -314,7 +313,7 @@ export function SearchResults({
               onClick={() => goToPage(safePage - 1)}
               disabled={safePage === 1}
               aria-label="Página anterior"
-              className="border border-neutral-300 bg-white px-3 py-2 text-sm text-neutral-600 hover:bg-neutral-50 disabled:opacity-30 disabled:pointer-events-none dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-400"
+              className="border border-neutral-200/80 bg-white rounded-lg px-3 py-2 text-sm text-neutral-600 hover:bg-neutral-50 disabled:opacity-30 disabled:pointer-events-none dark:border-neutral-700/80 dark:bg-neutral-900 dark:text-neutral-400"
             >
               ‹ Anterior
             </button>
@@ -327,10 +326,10 @@ export function SearchResults({
                     key={p}
                     onClick={() => goToPage(p as number)}
                     aria-current={p === safePage ? "page" : undefined}
-                    className={`min-w-[2.25rem] border px-2.5 py-2 text-sm font-medium transition-all ${
+                    className={`min-w-[2.25rem] border rounded-lg px-2.5 py-2 text-sm font-medium transition-all ${
                       p === safePage
                         ? "border-blue-500 bg-blue-600 text-white"
-                        : "border-neutral-300 bg-white text-neutral-600 hover:bg-neutral-50 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-400"
+                        : "border-neutral-200/80 bg-white text-neutral-600 hover:bg-neutral-50 dark:border-neutral-700/80 dark:bg-neutral-900 dark:text-neutral-400"
                     }`}
                   >
                     {p}
@@ -342,7 +341,7 @@ export function SearchResults({
               onClick={() => goToPage(safePage + 1)}
               disabled={safePage === totalPages}
               aria-label="Página siguiente"
-              className="border border-neutral-300 bg-white px-3 py-2 text-sm text-neutral-600 hover:bg-neutral-50 disabled:opacity-30 disabled:pointer-events-none dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-400"
+              className="border border-neutral-200/80 bg-white rounded-lg px-3 py-2 text-sm text-neutral-600 hover:bg-neutral-50 disabled:opacity-30 disabled:pointer-events-none dark:border-neutral-700/80 dark:bg-neutral-900 dark:text-neutral-400"
             >
               Siguiente ›
             </button>

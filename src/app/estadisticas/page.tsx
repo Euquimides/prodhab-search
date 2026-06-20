@@ -33,29 +33,27 @@ ChartJS.register(
   Legend,
 );
 
+// Paleta de tokens de diseño mapeada a rgba para Chart.js (Chart.js no soporta OKLCH)
+// Tokens fuente: Civic Blue #2563eb, Indigo Signal #6366f1, Ledger Green #10b981, Amber #f59e0b
+const TOKEN_RGB = {
+  civicBlue: "37, 99, 235",
+  indigo: "99, 102, 241",
+  ledgerGreen: "16, 185, 129",
+  amber: "245, 158, 11",
+} as const;
+
+const PALETTE_KEYS = [TOKEN_RGB.civicBlue, TOKEN_RGB.indigo, TOKEN_RGB.ledgerGreen, TOKEN_RGB.amber] as const;
+
 const colors = {
-  primary: "rgba(59, 130, 246, 0.8)",
-  primaryBorder: "rgba(59, 130, 246, 1)",
-  // Cluster palette: 4 system hues × 2 opacity tiers — no off-system colors
+  primary: `rgba(${TOKEN_RGB.civicBlue}, 0.8)`,
+  primaryBorder: `rgba(${TOKEN_RGB.civicBlue}, 1)`,
   palette: [
-    "rgba(37, 99, 235, 0.75)",   // Civic Blue — full
-    "rgba(99, 102, 241, 0.75)",  // Indigo Signal — full
-    "rgba(16, 185, 129, 0.75)",  // Ledger Green — full
-    "rgba(245, 158, 11, 0.75)",  // Amber — full
-    "rgba(37, 99, 235, 0.42)",   // Civic Blue — light
-    "rgba(99, 102, 241, 0.42)",  // Indigo Signal — light
-    "rgba(16, 185, 129, 0.42)",  // Ledger Green — light
-    "rgba(245, 158, 11, 0.42)",  // Amber — light
+    ...PALETTE_KEYS.map((c) => `rgba(${c}, 0.75)`),
+    ...PALETTE_KEYS.map((c) => `rgba(${c}, 0.42)`),
   ],
   paletteBorder: [
-    "rgba(37, 99, 235, 1)",
-    "rgba(99, 102, 241, 1)",
-    "rgba(16, 185, 129, 1)",
-    "rgba(245, 158, 11, 1)",
-    "rgba(37, 99, 235, 0.65)",
-    "rgba(99, 102, 241, 0.65)",
-    "rgba(16, 185, 129, 0.65)",
-    "rgba(245, 158, 11, 0.65)",
+    ...PALETTE_KEYS.map((c) => `rgba(${c}, 1)`),
+    ...PALETTE_KEYS.map((c) => `rgba(${c}, 0.65)`),
   ],
 };
 
@@ -70,7 +68,7 @@ interface ChartCardProps {
 function ChartCard({ title, children, className = "", chartLabel, headingLevel: Heading = "h3" }: ChartCardProps) {
   return (
     <div
-      className={`bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 p-4 sm:p-6 ${className}`}
+      className={`bg-white dark:bg-neutral-900 border border-neutral-200/80 dark:border-neutral-800/80 rounded-xl p-4 sm:p-6 ${className}`}
     >
       <Heading className="text-lg font-semibold text-neutral-900 dark:text-neutral-100 mb-4">
         {title}
@@ -135,11 +133,11 @@ export default function EstadisticasPage() {
   if (error) {
     return (
       <div className="min-h-screen bg-white dark:bg-neutral-950 flex items-center justify-center">
-        <div className="border border-red-200 bg-red-50 p-6 text-center dark:border-red-800 dark:bg-red-900/30">
+        <div className="border border-red-200/80 bg-red-50 rounded-xl p-6 text-center dark:border-red-800/80 dark:bg-red-900/30">
           <p className="font-medium text-red-700 dark:text-red-300 mb-4">{error}</p>
           <button
             onClick={loadData}
-            className="px-4 py-2 bg-blue-600 text-white text-sm font-medium hover:bg-blue-700 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+            className="px-4 py-2 bg-blue-500 rounded-lg text-white text-sm font-medium hover:bg-blue-600 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-2"
           >
             Reintentar
           </button>
@@ -150,9 +148,9 @@ export default function EstadisticasPage() {
 
   if (!stats) return null;
 
-  // Theme-aware chart colors
-  const gridColor = isDark ? "rgba(147, 165, 235, 0.07)" : "rgba(37, 99, 235, 0.05)";
-  const tickColor = isDark ? "#a3a3a3" : "#737373";
+  // Colores de grilla/etiquetas: tintados hacia matiz 250 según sistema de diseño
+  const gridColor = isDark ? `rgba(${TOKEN_RGB.civicBlue}, 0.07)` : `rgba(${TOKEN_RGB.civicBlue}, 0.05)`;
+  const tickColor = isDark ? "#a3a3a3" : "#737373"; // Ceniza / Grafito
 
   const resultadoKeys = Object.keys(stats.resultadoDistribution).sort(
     (a, b) => stats.resultadoDistribution[b] - stats.resultadoDistribution[a],
@@ -341,9 +339,9 @@ export default function EstadisticasPage() {
     <div className="min-h-screen bg-white dark:bg-neutral-950 flex flex-col">
       <SiteHeader subtitle="Estadísticas" />
       <div className="mx-auto max-w-7xl px-4 sm:px-6 py-6 sm:py-8 flex-1 w-full">
-        {/* Header */}
+        {/* Encabezado */}
         <div className="mb-8 sm:mb-12">
-          <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold tracking-tight text-neutral-900 dark:text-neutral-100">
+          <h1 className="text-2xl sm:text-3xl md:text-4xl font-semibold tracking-tight text-neutral-900 dark:text-neutral-100">
             Estadísticas del conjunto de datos
           </h1>
           <p className="mt-2 text-sm text-neutral-500 dark:text-neutral-400 max-w-prose">
@@ -354,7 +352,7 @@ export default function EstadisticasPage() {
           </p>
         </div>
 
-        {/* Records per Year */}
+        {/* Resoluciones por año */}
         <section className="mb-8 sm:mb-12">
           <ChartCard title="Resoluciones por año" headingLevel="h2" chartLabel="Gráfico de barras mostrando la cantidad de resoluciones emitidas por año">
             <div className="h-64 sm:h-80">
@@ -363,7 +361,7 @@ export default function EstadisticasPage() {
           </ChartCard>
         </section>
 
-        {/* Clustering Analysis */}
+        {/* Análisis de agrupamiento */}
         {stats.clusterAnalysis && (
           <section className="mb-8 sm:mb-12">
             <h2 className="text-xl font-semibold text-neutral-900 dark:text-neutral-100 mb-4">
@@ -410,7 +408,7 @@ export default function EstadisticasPage() {
               </p>
             </details>
 
-            {/* Scatter Plot - Main visualization */}
+            {/* Diagrama de dispersión — visualización principal */}
             {scatterData && (
               <ChartCard
                 title="Mapa de agrupación temática"
@@ -464,14 +462,14 @@ export default function EstadisticasPage() {
               )}
             </div>
 
-            {/* Cluster details table */}
-            <div className="mt-6 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 p-4 sm:p-6 overflow-x-auto">
+            {/* Tabla de detalles de clústeres */}
+            <div className="mt-6 bg-white dark:bg-neutral-900 border border-neutral-200/80 dark:border-neutral-800/80 rounded-xl p-4 sm:p-6 overflow-x-auto">
               <h3 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100 mb-4">
                 Detalle de grupos temáticos
               </h3>
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="border-b border-neutral-200 dark:border-neutral-700">
+                  <tr className="border-b border-neutral-200/80 dark:border-neutral-700/80">
                     <th scope="col" className="text-left py-2 px-3 text-neutral-600 dark:text-neutral-400">
                       Grupo
                     </th>
@@ -498,7 +496,7 @@ export default function EstadisticasPage() {
                       return (
                         <tr
                           key={cluster.id}
-                          className="border-b border-neutral-100 dark:border-neutral-800"
+                          className="border-b border-neutral-100/80 dark:border-neutral-800/80"
                         >
                           <td scope="row" className="py-2 px-3 font-medium text-neutral-900 dark:text-neutral-100">
                             <span

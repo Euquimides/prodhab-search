@@ -8,10 +8,10 @@ html {
 }
 
 :root {
-  --background: oklch(0.995 0.005 235);
-  --foreground: oklch(0.17 0.012 235);
-  --primary: oklch(0.53 0.23 264);
-  --slider-track-empty: oklch(0.905 0.008 235);
+  --background: oklch(0.985 0.003 250);
+  --foreground: oklch(0.20 0.008 250);
+  --primary: oklch(0.55 0.14 250);
+  --slider-track-empty: oklch(0.92 0.005 250);
 
   --ease-out: cubic-bezier(0.25, 1, 0.5, 1);
 }
@@ -23,13 +23,13 @@ html {
 }
 
 .dark {
-  --background: oklch(0.10 0.015 235);
-  --foreground: oklch(0.93 0.006 250);
+  --background: oklch(0.10 0.022 235);
+  --foreground: oklch(0.90 0.005 250);
 
-  --slider-track-empty: oklch(0.30 0.008 235);
+  --slider-track-empty: oklch(0.28 0.006 250);
 }
 
-/* Native select dropdown options inherit the OS dark theme */
+/* Las opciones del select nativo heredan el tema oscuro del SO */
 .dark select {
   color-scheme: dark;
 }
@@ -142,6 +142,30 @@ body {
 
 .animate-overlay {
   animation: fadeOverlay 0.18s ease both;
+}
+
+/* Hero vignette: subtle brand tint that dissolves into page background */
+.hero-vignette {
+  position: relative;
+}
+.hero-vignette::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    to bottom,
+    oklch(0.94 0.025 250),
+    oklch(0.985 0.003 250)
+  );
+  pointer-events: none;
+  z-index: 0;
+}
+.dark .hero-vignette::before {
+  background: linear-gradient(
+    to bottom,
+    oklch(0.148 0.019 235),
+    oklch(0.10 0.022 235)
+  );
 }
 
 /* Reducir movimiento para usuarios sensibles al movimiento */

@@ -2,6 +2,7 @@
 
 import React, { useMemo, useState, useCallback, useRef, useEffect } from "react";
 import ForceGraph3D from "react-force-graph-3d";
+import { UnrealBloomPass } from "three/examples/jsm/postprocessing/UnrealBloomPass.js";
 import {
   useSearchIndex,
   ResolutionItem,
@@ -9,7 +10,7 @@ import {
   RESULTADO_COLORS,
 } from "@/context/SearchContext";
 import { useDebounce, useIsDark } from "@/utils/hooks";
-import { Search, X, ChevronRight, ChevronLeft, FileText } from "lucide-react";
+import { Search, X, ChevronRight, ChevronLeft, Eye, ExternalLink } from "lucide-react";
 import Link from "next/link";
 
 const NODE_DEFAULT_COLOR = "#6b7280";
@@ -28,7 +29,9 @@ interface GraphNode {
   resultado: string;
   anio: number | null;
   color: string;
-  citationCount: number;
+  citationCount: number; // in-degree: veces citada por otras
+  citesInGraph: number; // out-degree dentro del grafo
+  citesTotal: number; // total de resoluciones citadas (incluye externas)
   archivo_origen?: string;
   denunciado?: string;
 }
@@ -55,17 +58,25 @@ function buildGraphData(items: ResolutionItem[]) {
 
   const links: GraphLink[] = [];
   const nodeIds = new Set<string>();
+  const linkSeen = new Set<string>();
+  const citesInGraph = new Map<string, number>(); // out-degree dentro del grafo
+  const citesTotal = new Map<string, number>(); // citas únicas, incluidas externas
 
   // Solo incluir resoluciones que citan o son citadas
   items.forEach((item) => {
     const num = item.metadatos?.resolucion;
     if (!num) return;
-    item.metadatos?.resoluciones_citadas?.forEach((cited) => {
-      if (resByNum.has(cited)) {
-        links.push({ source: num, target: cited });
-        nodeIds.add(num);
-        nodeIds.add(cited);
-      }
+    const cited = [...new Set(item.metadatos?.resoluciones_citadas ?? [])].filter((c) => c !== num);
+    citesTotal.set(num, cited.length);
+    cited.forEach((c) => {
+      if (!resByNum.has(c)) return; // citada externa / no indexada → fuera del grafo
+      const key = `${num}__${c}`;
+      if (linkSeen.has(key)) return; // evita aristas duplicadas
+      linkSeen.add(key);
+      links.push({ source: num, target: c });
+      citesInGraph.set(num, (citesInGraph.get(num) ?? 0) + 1);
+      nodeIds.add(num);
+      nodeIds.add(c);
     });
   });
 
@@ -82,6 +93,8 @@ function buildGraphData(items: ResolutionItem[]) {
       anio: item.metadatos?.anio ?? null,
       color: RESULTADO_COLORS[resultado as keyof typeof RESULTADO_COLORS] ?? NODE_DEFAULT_COLOR,
       citationCount: citedCount.get(num) ?? 0,
+      citesInGraph: citesInGraph.get(num) ?? 0,
+      citesTotal: citesTotal.get(num) ?? 0,
       archivo_origen: item.metadatos?.archivo_origen,
       denunciado: item.metadatos?.denunciado,
     });
@@ -123,6 +136,7 @@ export default function CitationGraph() {
   const [panelOpen, setPanelOpen] = useState(true);
   const [orbiting, setOrbiting] = useState(false);
   const orbitAngleRef = useRef(0);
+  const bloomRef = useRef<UnrealBloomPass | null>(null);
 
   // Tamaño del contenedor
   useEffect(() => {
@@ -260,6 +274,26 @@ export default function CitationGraph() {
     );
   }, [graphData.nodes]);
 
+  // ponytail: bloom solo en modo oscuro — en fondos claros se desvanece
+  useEffect(() => {
+    const fg = graphRef.current;
+    if (!fg) return;
+    const composer = fg.postProcessingComposer();
+    if (!composer) return;
+
+    if (isDark) {
+      if (!bloomRef.current) {
+        // ponytail: umbral 0.15 — solo nodos/enlaces brillantes emiten resplandor
+        const bloom = new UnrealBloomPass(undefined as any, 1.2, 0.4, 0.15);
+        bloomRef.current = bloom;
+        composer.addPass(bloom);
+      }
+      bloomRef.current.enabled = true;
+    } else if (bloomRef.current) {
+      bloomRef.current.enabled = false;
+    }
+  }, [isDark, graphData]); // dep graphData asegura que el grafo esté inicializado
+
   const handleEngineStop = useCallback(() => {
     setOrbiting(true);
     const target = pendingFocusRef.current;
@@ -363,7 +397,7 @@ export default function CitationGraph() {
 
   // Clases compartidas para los paneles flotantes (siguen el tema de la app)
   const panelBase =
-    "border border-neutral-200 bg-white dark:border-neutral-800 dark:bg-neutral-900";
+    "border border-neutral-200/80 rounded-xl bg-white dark:border-neutral-800/80 dark:bg-neutral-900";
 
   return (
     <div ref={containerRef} className="relative w-full h-full">
@@ -407,7 +441,7 @@ export default function CitationGraph() {
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Buscar en el grafo… (Ctrl+K)"
             aria-label="Buscar resoluciones en el grafo"
-            className="w-full pl-10 pr-10 py-2.5 border border-neutral-300 bg-white text-sm text-neutral-900 placeholder:text-neutral-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-100 dark:placeholder:text-neutral-500"
+            className="w-full pl-10 pr-10 py-2.5 border border-neutral-200/80 rounded-xl bg-white text-sm text-neutral-900 placeholder:text-neutral-400 focus:outline-none focus:ring-2 focus:ring-blue-400/20 focus:border-blue-400 transition-all dark:border-neutral-700/80 dark:bg-neutral-900 dark:text-neutral-100 dark:placeholder:text-neutral-500"
           />
           {query && (
             <button
@@ -420,7 +454,7 @@ export default function CitationGraph() {
           )}
         </div>
         {isSearchActive && (
-          <p className="mt-1.5 font-mono text-[11px] tracking-wide text-neutral-500 dark:text-neutral-400 text-center">
+          <p className="mt-1.5 text-[11px] tracking-wide text-neutral-500 dark:text-neutral-400 text-center">
             {searchMatches.size === 0
               ? "Sin coincidencias"
               : `${searchMatches.size} resolución${searchMatches.size !== 1 ? "es" : ""} encontrada${searchMatches.size !== 1 ? "s" : ""}`}
@@ -440,9 +474,9 @@ export default function CitationGraph() {
           </button>
 
           {panelOpen && (
-            <div className="h-full overflow-y-auto border-t sm:border-t-0 sm:border-l border-neutral-200 bg-white dark:border-neutral-800 dark:bg-neutral-900">
-              <div className="px-3 py-3 border-b border-neutral-200 dark:border-neutral-800 sticky top-0 bg-white dark:bg-neutral-900">
-                <p className="font-mono text-[11px] uppercase tracking-widest text-neutral-500 dark:text-neutral-400">
+            <div className="h-full overflow-y-auto border-t sm:border-t-0 sm:border-l border-neutral-200/80 bg-white dark:border-neutral-800/80 dark:bg-neutral-900">
+              <div className="px-3 py-3 border-b border-neutral-200/80 dark:border-neutral-800/80 sticky top-0 bg-white dark:bg-neutral-900">
+                <p className="text-[11px] font-medium uppercase tracking-widest text-neutral-500 dark:text-neutral-400">
                   {matchedNodes.length} resultado{matchedNodes.length !== 1 ? "s" : ""}
                 </p>
               </div>
@@ -451,7 +485,7 @@ export default function CitationGraph() {
                   <button
                     key={node.id}
                     onClick={() => focusNode(node)}
-                    className={`w-full text-left px-3 py-3 border-l border-l-blue-600 transition-colors hover:bg-neutral-50 dark:hover:bg-neutral-800/50 ${selectedNode?.id === node.id ? "bg-neutral-100 dark:bg-neutral-800/70" : ""}`}
+                    className={`w-full text-left px-3 py-3 transition-colors hover:bg-neutral-50 dark:hover:bg-neutral-800/50 ${selectedNode?.id === node.id ? "bg-neutral-100 dark:bg-neutral-800/70" : ""}`}
                   >
                     <div className="flex items-start justify-between gap-2">
                       <div className="min-w-0">
@@ -469,7 +503,7 @@ export default function CitationGraph() {
                         title={RESULTADO_LABELS[node.resultado as keyof typeof RESULTADO_LABELS] ?? node.resultado}
                       />
                     </div>
-                    <div className="mt-1 flex items-center gap-2 font-mono text-[11px] tracking-wide text-neutral-500">
+                    <div className="mt-1 flex items-center gap-2 text-[11px] tracking-wide text-neutral-500">
                       <span>{RESULTADO_LABELS[node.resultado as keyof typeof RESULTADO_LABELS] ?? node.resultado}</span>
                       {node.citationCount > 0 && (
                         <><span className="text-neutral-300 dark:text-neutral-700">·</span><span>Citada {node.citationCount}×</span></>
@@ -507,13 +541,21 @@ export default function CitationGraph() {
           )}
           <div className="mt-1.5 flex items-center gap-2">
             <span className="inline-block h-2 w-2 rounded-full" style={{ backgroundColor: selectedNode.color }} />
-            <span className="font-mono text-[11px] tracking-wide text-neutral-600 dark:text-neutral-300">
+            <span className="text-[11px] font-medium tracking-wide text-neutral-600 dark:text-neutral-300">
               {RESULTADO_LABELS[selectedNode.resultado as keyof typeof RESULTADO_LABELS] ?? selectedNode.resultado}
             </span>
           </div>
           {selectedNode.citationCount > 0 && (
-            <p className="font-mono text-[11px] tracking-wide text-neutral-500 mt-1">
+            <p className="text-[11px] tracking-wide text-neutral-500 mt-1">
               Citada {selectedNode.citationCount} {selectedNode.citationCount === 1 ? "vez" : "veces"}
+            </p>
+          )}
+          {selectedNode.citesTotal > 0 && (
+            <p className="text-[11px] tracking-wide text-neutral-500 mt-1">
+              Cita {selectedNode.citesTotal} {selectedNode.citesTotal === 1 ? "resolución" : "resoluciones"}
+              {selectedNode.citesInGraph < selectedNode.citesTotal && (
+                <span className="text-neutral-400 dark:text-neutral-500"> ({selectedNode.citesInGraph} en el grafo)</span>
+              )}
             </p>
           )}
           <div className="mt-2 flex flex-wrap items-center gap-3">
@@ -521,7 +563,7 @@ export default function CitationGraph() {
               href={`/#abrir=${selectedNode.resolucion}`}
               className="inline-flex items-center gap-1 text-xs text-blue-600 dark:text-blue-400 hover:underline"
             >
-              <FileText className="h-3 w-3" />
+              <Eye className="h-3 w-3" />
               Ver en PrivataSearch
             </Link>
             {selectedNode.archivo_origen && (
@@ -531,7 +573,7 @@ export default function CitationGraph() {
                 rel="noopener noreferrer"
                 className="inline-flex items-center gap-1 text-xs text-neutral-500 dark:text-neutral-400 hover:underline"
               >
-                <FileText className="h-3 w-3" />
+                <ExternalLink className="h-3 w-3" />
                 Ver PDF
               </a>
             )}
@@ -539,23 +581,23 @@ export default function CitationGraph() {
         </div>
       )}
 
-      {/* Leyenda — hidden on mobile, too dense for small screens */}
+      {/* Leyenda — oculta en móvil, demasiado densa para pantallas pequeñas */}
       <div className={`absolute bottom-4 left-4 hidden sm:block px-4 py-3 text-xs max-w-[calc(100%-2rem)] ${panelBase}`}>
-        <p className="font-mono text-[11px] uppercase tracking-widest text-neutral-700 dark:text-neutral-300 mb-2">Resultado</p>
+        <p className="text-[11px] font-medium uppercase tracking-widest text-neutral-700 dark:text-neutral-300 mb-2">Resultado</p>
         <div className="flex flex-wrap gap-x-4 gap-y-1">
           {Object.entries(RESULTADO_COLORS).map(([key, color]) => (
-            <span key={key} className="flex items-center gap-1.5 font-mono text-[11px] tracking-wide text-neutral-500 dark:text-neutral-400">
+            <span key={key} className="flex items-center gap-1.5 text-[11px] tracking-wide text-neutral-500 dark:text-neutral-400">
               <span className="inline-block h-2.5 w-2.5 rounded-full" style={{ backgroundColor: color }} />
               {RESULTADO_LABELS[key as keyof typeof RESULTADO_LABELS] ?? key}
             </span>
           ))}
         </div>
-        <p className="mt-2 font-mono text-[11px] tracking-wide text-neutral-400 dark:text-neutral-500">Tamaño = veces citada · Flechas = dirección de cita</p>
-        <p className="mt-1 font-mono text-[11px] tracking-wide text-neutral-400 dark:text-neutral-500">Clic izq. rotar · Clic der. desplazar · Rueda zoom</p>
+        <p className="mt-2 text-[11px] tracking-wide text-neutral-400 dark:text-neutral-500">Tamaño = veces citada · Flechas = dirección de cita</p>
+        <p className="mt-1 text-[11px] tracking-wide text-neutral-400 dark:text-neutral-500">Clic izq. rotar · Clic der. desplazar · Rueda zoom</p>
       </div>
 
-      {/* Estadísticas del grafo — hidden on mobile */}
-      <div className={`absolute top-4 left-4 hidden sm:block px-3 py-2 font-mono text-[11px] uppercase tracking-widest text-neutral-500 dark:text-neutral-400 ${panelBase}`}>
+      {/* Estadísticas del grafo — ocultas en móvil */}
+      <div className={`absolute top-4 left-4 hidden sm:block px-3 py-2 text-[11px] font-medium uppercase tracking-widest text-neutral-500 dark:text-neutral-400 ${panelBase}`}>
         {graphData.nodes.length} resoluciones · {graphData.links.length} citas
       </div>
     </div>

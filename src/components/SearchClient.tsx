@@ -79,7 +79,7 @@ export default function SearchClient() {
   const [showHistory, setShowHistory] = useState(false);
   const [activeHistoryIndex, setActiveHistoryIndex] = useState(-1);
 
-  // Reader overlay state
+  // Estado del panel de lectura
   const [selectedItem, setSelectedItem] = useState<ResolutionItem | null>(null);
   const [overlayOpen, setOverlayOpen] = useState(false);
 
@@ -108,7 +108,7 @@ export default function SearchClient() {
     });
   }, [debouncedQuery, yearFrom, yearTo, selectedDescriptores, selectedResultados, selectedTipos, page]);
 
-  // Keyboard shortcuts: / to focus search, Esc to close overlay or clear query
+  // Atajos de teclado: / para enfocar búsqueda, Esc para cerrar panel o limpiar consulta
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       if (e.key === "/" && !(document.activeElement instanceof HTMLInputElement || document.activeElement instanceof HTMLTextAreaElement || (document.activeElement as HTMLElement)?.isContentEditable)) {
@@ -266,9 +266,14 @@ export default function SearchClient() {
 
   return (
     <>
-      {/* Hero section */}
-      <div className="border-b border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900">
-        <div className="max-w-[1320px] mx-auto px-4 sm:px-6 py-6 sm:py-8">
+      {/* Sección principal */}
+      <div className="hero-vignette">
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-0 bg-cover bg-center opacity-[0.85] mix-blend-soft-light dark:opacity-[0.85] dark:mix-blend-overlay"
+          style={{ backgroundImage: "url('/hilo.png')" }}
+        />
+        <div className="relative z-[1] max-w-[1320px] mx-auto px-4 sm:px-6 py-6 sm:py-8">
           <div className="flex items-center justify-between mb-6">
             <div className="flex items-center gap-3">
               <Image
@@ -299,7 +304,7 @@ export default function SearchClient() {
             Resoluciones de la Agencia de Protección de Datos (PRODHAB) de Costa Rica.
           </p>
 
-          {/* Search bar */}
+          {/* Barra de búsqueda */}
           <div className="relative w-full">
             <div className="absolute left-4 top-1/2 -translate-y-1/2 pointer-events-none">
               <svg
@@ -330,7 +335,7 @@ export default function SearchClient() {
               }
               aria-label="Buscar resoluciones"
               autoComplete="off"
-              className="w-full pl-12 pr-12 py-3 border border-neutral-300 dark:border-neutral-600 bg-white dark:bg-neutral-800 text-base text-neutral-900 dark:text-neutral-100 transition-all focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
+              className="w-full pl-12 pr-12 py-3 border border-neutral-200/80 dark:border-neutral-700/80 rounded-xl bg-white dark:bg-neutral-800 text-base text-neutral-900 dark:text-neutral-100 transition-all focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-400/20"
             />
             {query ? (
               <button
@@ -344,19 +349,19 @@ export default function SearchClient() {
                 </svg>
               </button>
             ) : (
-              <span className="absolute right-3 top-1/2 -translate-y-1/2 font-mono text-[11px] text-neutral-400 border border-neutral-300 dark:border-neutral-600 px-1.5 py-0.5 bg-neutral-50 dark:bg-neutral-700">
+              <span className="absolute right-3 top-1/2 -translate-y-1/2 font-mono text-[11px] text-neutral-400 border border-neutral-200/80 dark:border-neutral-700/80 rounded-md px-1.5 py-0.5 bg-neutral-50 dark:bg-neutral-700">
                 /
               </span>
             )}
 
-            {/* Search history dropdown */}
+            {/* Desplegable de historial */}
             {showHistory && !query && searchHistory.length > 0 && (
               <div
                 ref={historyRef}
                 id="search-history-listbox"
                 role="listbox"
                 aria-label="Búsquedas recientes"
-                className="absolute top-full left-0 right-0 z-50 mt-1 overflow-hidden border border-neutral-200 bg-white dark:border-neutral-700 dark:bg-neutral-900 animate-slide-down"
+                className="absolute top-full left-0 right-0 z-50 mt-1 overflow-hidden border border-neutral-200/80 bg-white rounded-xl dark:border-neutral-700/80 dark:bg-neutral-900 animate-slide-down"
               >
                 <div className="flex items-center justify-between px-3 py-2 border-b border-neutral-100 dark:border-neutral-800">
                   <span className="text-xs font-medium text-neutral-500 dark:text-neutral-400">Búsquedas recientes</span>
@@ -405,16 +410,16 @@ export default function SearchClient() {
       {error && (
         <div
           role="alert"
-          className="mx-auto max-w-[1320px] px-4 sm:px-6 mt-4 border border-red-200 bg-red-50 p-4 text-red-700 dark:border-red-800 dark:bg-red-900/30 dark:text-red-300 animate-slide-down"
+          className="mx-auto max-w-[1320px] px-4 sm:px-6 mt-4 border border-red-200/80 bg-red-50 rounded-xl p-4 text-red-700 dark:border-red-800/80 dark:bg-red-900/30 dark:text-red-300 animate-slide-down"
         >
           <p className="font-medium">No se pudo cargar el índice de resoluciones</p>
           <p className="text-sm mt-0.5">{error}. Recarga la página para intentarlo de nuevo.</p>
         </div>
       )}
 
-      {/* Rail layout: sidebar + results */}
+      {/* Diseño lateral: barra + resultados */}
       <div className="max-w-[1320px] mx-auto px-4 sm:px-6 py-6">
-        {/* Active filter summary */}
+        {/* Resumen de filtros activos */}
         {query && (
           <p
             role="status"
@@ -425,22 +430,22 @@ export default function SearchClient() {
             <strong className="text-neutral-900 dark:text-neutral-100">{tipoFilteredResults.length}</strong>
             {" "}resolucion{tipoFilteredResults.length === 1 ? "" : "es"} para «{query}»
             {(yearFrom || yearTo) && (
-              <span className="bg-blue-100 px-1.5 py-0.5 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300 font-medium">
+              <span className="bg-blue-100/70 rounded-md px-1.5 py-0.5 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300 font-medium">
                 {yearFrom ?? "…"}–{yearTo ?? "…"}
               </span>
             )}
             {selectedDescriptores.map((d) => (
-              <span key={d} className="bg-indigo-100 px-1.5 py-0.5 text-indigo-700 dark:bg-indigo-900/40 dark:text-indigo-300 font-medium">
+              <span key={d} className="bg-indigo-100/70 rounded-md px-1.5 py-0.5 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-300 font-medium">
                 {DESCRIPTOR_LABELS[d] ?? d}
               </span>
             ))}
             {selectedResultados.map((r) => (
-              <span key={r} className="bg-neutral-200 px-1.5 py-0.5 text-neutral-700 dark:bg-neutral-700 dark:text-neutral-200 font-medium">
+              <span key={r} className="bg-neutral-200/70 rounded-md px-1.5 py-0.5 text-neutral-700 dark:bg-neutral-700/70 dark:text-neutral-200 font-medium">
                 {RESULTADO_LABELS[r] ?? r}
               </span>
             ))}
             {selectedTipos.map((t) => (
-              <span key={t} className="bg-neutral-200 px-1.5 py-0.5 text-neutral-700 dark:bg-neutral-700 dark:text-neutral-200 font-medium">
+              <span key={t} className="bg-neutral-200/70 rounded-md px-1.5 py-0.5 text-neutral-700 dark:bg-neutral-700/70 dark:text-neutral-200 font-medium">
                 {TIPO_LABELS[t] ?? t}
               </span>
             ))}
@@ -448,7 +453,7 @@ export default function SearchClient() {
         )}
 
         <div className="grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-6 items-start">
-          {/* Sidebar */}
+          {/* Barra lateral */}
           <aside className="lg:sticky lg:top-6">
             <SearchConfigPanel
               limit={limit}
@@ -475,7 +480,7 @@ export default function SearchClient() {
             />
           </aside>
 
-          {/* Results */}
+          {/* Resultados */}
           <section aria-label="Resultados de búsqueda">
             <SearchResults
               query={debouncedQuery}
@@ -496,7 +501,7 @@ export default function SearchClient() {
         </div>
       </div>
 
-      {/* Reader overlay */}
+      {/* Panel de lectura */}
       {overlayOpen && selectedItem && (
         <ReaderOverlay
           item={selectedItem}
