@@ -43,7 +43,7 @@ export interface DatasetMetadata {
   total_registros: number;
   modelo_embedding?: string;
   dimension_embedding?: number;
-  modelo_ia_utilizado?: string; // legacy field
+  modelo_ia_utilizado?: string; // campo heredado
 }
 
 export interface Dataset {
@@ -405,7 +405,7 @@ export function calculateStatistics(dataset: Dataset): DatasetStatistics {
   const vectorNorms: number[] = [];
   const allVectors: number[][] = [];
   const recordDates: (string | null)[] = [];
-  const vectorToRecordMap: number[] = []; // Maps vector index to original record index
+  const vectorToRecordMap: number[] = []; // Mapea índice de vector al índice del registro original
   
   // Procesa cada registro
   for (let recordIdx = 0; recordIdx < datos.length; recordIdx++) {
@@ -518,7 +518,7 @@ export function calculateStatistics(dataset: Dataset): DatasetStatistics {
     
     // Estadísticas por dimensión (muestra las primeras dimensiones y el patrón general)
     const numDimensions = allVectors[0].length;
-    const dimensionsToShow = Math.min(10, numDimensions); // Show first 10 dimensions
+    const dimensionsToShow = Math.min(10, numDimensions); // Mostrar las primeras 10 dimensiones
     
     for (let d = 0; d < dimensionsToShow; d++) {
       const dimValues = allVectors.map(v => v[d]);
@@ -556,7 +556,7 @@ export function calculateStatistics(dataset: Dataset): DatasetStatistics {
     vectorValueDistribution = { overall: overallStats, histogram };
   }
   
-  // Clustering analysis
+  // Análisis de agrupamiento
   let clusterAnalysis: ClusterAnalysis | null = null;
   
   if (allVectors.length > 10) {

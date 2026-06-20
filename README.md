@@ -13,6 +13,7 @@ PrivataSearch es un buscador de texto completo e inteligente de resoluciones emi
 - **Similitud semántica** mediante similitud coseno y Máxima Relevancia Marginal (MMR) para sugerir resoluciones relacionadas con cada resultado.
 - **Filtros avanzados**: período (rango de años), resultado de la resolución, tipo de procedimiento, tema jurídico (descriptores) y número de resultados por página.
 - **Resaltado de coincidencias** para términos de búsqueda y descriptores jurídicos en los resultados.
+- **Grafo de citas 3D** interactivo que visualiza la red de citaciones entre resoluciones, con búsqueda integrada y paneles de detalle.
 - **Página de estadísticas** con métricas del conjunto de datos, distribución temporal, agrupación temática (clustering), y análisis de resultados y recursos, visualizados con Chart.js.
 - **Modo oscuro** con persistencia de preferencia del usuario.
 - **Sitio completamente estático** exportado como HTML/CSS/JS: no requiere servidor backend.
@@ -54,20 +55,30 @@ src/
 ├── app/
 │   ├── page.tsx               — Página principal (buscador)
 │   ├── layout.tsx             — Layout raíz y metadatos
+│   ├── globals.css            — Estilos globales y animaciones
 │   ├── estadisticas/page.tsx  — Página de estadísticas y gráficas
+│   ├── grafo/page.tsx         — Grafo interactivo 3D de citas
 │   └── disclaimer/page.tsx    — Descargo de responsabilidad
 ├── components/
 │   ├── SearchClient.tsx       — Lógica de búsqueda del lado cliente
 │   ├── SearchResults.tsx      — Presentación de resultados
 │   ├── SearchConfigPanel.tsx  — Panel de filtros y configuración
+│   ├── ReaderOverlay.tsx      — Panel lateral de lectura de resolución
 │   ├── RelatedResolutions.tsx — Resoluciones relacionadas (MMR)
+│   ├── CitationGraph.tsx      — Grafo 3D de red de citas (WebGL)
+│   ├── SiteHeader.tsx         — Encabezado del sitio
 │   ├── DarkModeToggle.tsx     — Toggle de modo oscuro
+│   ├── ErrorBoundary.tsx      — Captura de errores en componentes
 │   └── Footer.tsx             — Pie de página
 ├── context/
 │   └── SearchContext.tsx      — Contexto de búsqueda e índice FlexSearch
+├── types/
+│   └── three-bloom.d.ts      — Tipos para efecto bloom de Three.js
 └── utils/
     ├── semanticSimilarity.ts  — Similitud coseno y algoritmo MMR
     ├── statisticsCalculator.ts — Cálculo de estadísticas del dataset
+    ├── formatters.ts          — Parseo de secciones legales y formato de citas
+    ├── hooks.ts               — Hooks personalizados (debounce, tema oscuro)
     └── highlightText.tsx      — Resaltado de términos en resultados
 
 public/
@@ -80,6 +91,7 @@ public/
 - [React](https://react.dev/)
 - [FlexSearch](https://github.com/nextapps-de/flexsearch)
 - [Chart.js](https://www.chartjs.org/) + [react-chartjs-2](https://react-chartjs-2.js.org/)
+- [3D Force Graph](https://github.com/vasturiano/3d-force-graph) + [Three.js](https://threejs.org/)
 - [TailwindCSS](https://tailwindcss.com/)
 - [Lucide React](https://lucide.dev/)
 

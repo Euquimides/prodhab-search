@@ -4,7 +4,7 @@ import { DarkModeToggle } from "./DarkModeToggle";
 
 export function SiteHeader({ subtitle }: { subtitle?: string }) {
   return (
-    <header className="sticky top-0 z-40 border-b border-neutral-200 bg-white/95 dark:border-neutral-800 dark:bg-neutral-950/95 backdrop-blur-md">
+    <header className="sticky top-0 z-40 border-b border-[oklch(0.85_0.01_250)] dark:border-[oklch(0.25_0.01_250)] bg-background/95 backdrop-blur-md">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 flex items-center justify-between h-12">
         <div className="flex items-center gap-3">
           <Link href="/" className="flex items-center gap-2 transition-opacity hover:opacity-80">

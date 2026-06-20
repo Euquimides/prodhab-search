@@ -113,13 +113,11 @@ export function SearchConfigPanel({
 
   const filterContent = (
     <div className="space-y-5">
-      {/* Date range */}
+      {/* Rango de fechas */}
       <fieldset>
-        <legend className="mb-2.5 flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-widest text-neutral-400 dark:text-neutral-500">
-          <span className="text-blue-600 dark:text-blue-400">01</span>
+        <legend className="mb-2.5 flex items-center gap-1.5 text-[11px] font-medium uppercase tracking-widest text-neutral-400 dark:text-neutral-500">
           <Calendar className="h-3.5 w-3.5" aria-hidden="true" />
           Período
-          <span className="flex-1 h-px bg-neutral-200 dark:bg-neutral-700" />
         </legend>
         <div className="grid grid-cols-2 gap-2">
           <div>
@@ -128,7 +126,7 @@ export function SearchConfigPanel({
               id="year-from"
               value={yearFrom ?? ""}
               onChange={(e) => setYearFrom(e.target.value ? Number(e.target.value) : null)}
-              className="w-full border border-neutral-300 bg-white px-2 py-1.5 text-sm text-neutral-900 focus:border-blue-500 focus:outline-none dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-100"
+              className="w-full border border-neutral-200/80 bg-white rounded-lg px-2 py-1.5 text-sm text-neutral-900 focus:border-blue-500 focus:outline-none dark:border-neutral-700/80 dark:bg-neutral-800 dark:text-neutral-100"
             >
               <option value="">Desde…</option>
               {availableYears.map((y) => (
@@ -142,7 +140,7 @@ export function SearchConfigPanel({
               id="year-to"
               value={yearTo ?? ""}
               onChange={(e) => setYearTo(e.target.value ? Number(e.target.value) : null)}
-              className="w-full border border-neutral-300 bg-white px-2 py-1.5 text-sm text-neutral-900 focus:border-blue-500 focus:outline-none dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-100"
+              className="w-full border border-neutral-200/80 bg-white rounded-lg px-2 py-1.5 text-sm text-neutral-900 focus:border-blue-500 focus:outline-none dark:border-neutral-700/80 dark:bg-neutral-800 dark:text-neutral-100"
             >
               <option value="">Hasta…</option>
               {availableYears.map((y) => (
@@ -155,11 +153,9 @@ export function SearchConfigPanel({
 
       {/* Resultado */}
       <fieldset>
-        <legend className="mb-2.5 flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-widest text-neutral-400 dark:text-neutral-500">
-          <span className="text-blue-600 dark:text-blue-400">02</span>
+        <legend className="mb-2.5 flex items-center gap-1.5 text-[11px] font-medium uppercase tracking-widest text-neutral-400 dark:text-neutral-500">
           <Tag className="h-3.5 w-3.5" aria-hidden="true" />
           Resultado
-          <span className="flex-1 h-px bg-neutral-200 dark:bg-neutral-700" />
         </legend>
         <div className="flex flex-wrap gap-1.5">
           {(Object.keys(RESULTADO_LABELS) as ResultadoType[]).map((key) => {
@@ -169,10 +165,10 @@ export function SearchConfigPanel({
                 key={key}
                 onClick={() => toggleResultado(key)}
                 aria-pressed={active}
-                className={`inline-flex items-center border px-3 py-2.5 sm:px-2 sm:py-1 text-xs font-medium transition-all active:scale-95 ${
+                className={`inline-flex items-center border rounded-lg px-3 py-2.5 sm:px-2.5 sm:py-1.5 text-xs font-medium transition-all active:scale-95 ${
                   active
-                    ? "border-blue-500 bg-blue-600 text-white dark:border-blue-400 dark:bg-blue-700"
-                    : "border-neutral-200 bg-white text-neutral-600 hover:border-neutral-400 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-300 dark:hover:border-neutral-500"
+                    ? "border-blue-400/80 bg-blue-500 text-white dark:border-blue-400 dark:bg-blue-600"
+                    : "border-neutral-200/80 bg-white text-neutral-600 hover:border-neutral-300 dark:border-neutral-700/80 dark:bg-neutral-900 dark:text-neutral-300 dark:hover:border-neutral-500"
                 }`}
               >
                 {RESULTADO_LABELS[key]}
@@ -184,11 +180,9 @@ export function SearchConfigPanel({
 
       {/* Tipo de procedimiento */}
       <fieldset>
-        <legend className="mb-2.5 flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-widest text-neutral-400 dark:text-neutral-500">
-          <span className="text-blue-600 dark:text-blue-400">03</span>
+        <legend className="mb-2.5 flex items-center gap-1.5 text-[11px] font-medium uppercase tracking-widest text-neutral-400 dark:text-neutral-500">
           <Filter className="h-3.5 w-3.5" aria-hidden="true" />
           Tipo de procedimiento
-          <span className="flex-1 h-px bg-neutral-200 dark:bg-neutral-700" />
         </legend>
         <div className="flex flex-wrap gap-1.5">
           {(Object.keys(TIPO_LABELS) as TipoProcedimientoType[]).map((key) => {
@@ -198,10 +192,10 @@ export function SearchConfigPanel({
                 key={key}
                 onClick={() => toggleTipo(key)}
                 aria-pressed={active}
-                className={`inline-flex items-center border px-3 py-2.5 sm:px-2 sm:py-1 text-xs font-medium transition-all active:scale-95 ${
+                className={`inline-flex items-center border rounded-lg px-3 py-2.5 sm:px-2.5 sm:py-1.5 text-xs font-medium transition-all active:scale-95 ${
                   active
-                    ? "border-blue-500 bg-blue-600 text-white dark:border-blue-400 dark:bg-blue-700"
-                    : "border-neutral-200 bg-white text-neutral-600 hover:border-neutral-400 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-300 dark:hover:border-neutral-500"
+                    ? "border-blue-400/80 bg-blue-500 text-white dark:border-blue-400 dark:bg-blue-600"
+                    : "border-neutral-200/80 bg-white text-neutral-600 hover:border-neutral-300 dark:border-neutral-700/80 dark:bg-neutral-900 dark:text-neutral-300 dark:hover:border-neutral-500"
                 }`}
               >
                 {TIPO_LABELS[key]}
@@ -211,18 +205,17 @@ export function SearchConfigPanel({
         </div>
       </fieldset>
 
-      {/* Results per page */}
+      {/* Resultados por página */}
       <div>
-        <label htmlFor="result-limit" className="mb-2 flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-widest text-neutral-400 dark:text-neutral-500">
+        <label htmlFor="result-limit" className="mb-2 flex items-center gap-1.5 text-[11px] font-medium uppercase tracking-widest text-neutral-400 dark:text-neutral-500">
           <ListOrdered className="h-3.5 w-3.5" aria-hidden="true" />
           Por página
-          <span className="flex-1 h-px bg-neutral-200 dark:bg-neutral-700" />
         </label>
         <select
           id="result-limit"
           value={limit}
           onChange={(e) => setLimit(Number(e.target.value))}
-          className="w-full border border-neutral-300 bg-white px-2 py-1.5 text-sm text-neutral-900 focus:border-blue-500 focus:outline-none dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-100"
+          className="w-full border border-neutral-200/80 bg-white rounded-lg px-2 py-1.5 text-sm text-neutral-900 focus:border-blue-500 focus:outline-none dark:border-neutral-700/80 dark:bg-neutral-800 dark:text-neutral-100"
         >
           <option value={5}>5</option>
           <option value={10}>10</option>
@@ -231,7 +224,7 @@ export function SearchConfigPanel({
         </select>
       </div>
 
-      {/* Descriptors */}
+      {/* Descriptores */}
       {isSearching && sortedDescriptores.length > 0 && (
         <div>
           <div className="mb-2.5 flex items-center justify-between">
@@ -256,10 +249,10 @@ export function SearchConfigPanel({
                   key={key}
                   onClick={() => toggleDescriptor(key)}
                   aria-pressed={active}
-                  className={`inline-flex items-center gap-1.5 border px-3 py-2.5 sm:px-2 sm:py-1 text-xs font-medium transition-all active:scale-95 ${
+                  className={`inline-flex items-center gap-1.5 border rounded-lg px-3 py-2.5 sm:px-2.5 sm:py-1.5 text-xs font-medium transition-all active:scale-95 ${
                     active
-                      ? "border-indigo-500 bg-indigo-600 text-white dark:border-indigo-400 dark:bg-indigo-700"
-                      : "border-neutral-200 bg-white text-neutral-600 hover:border-indigo-400 hover:bg-indigo-50 hover:text-indigo-700 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-300 dark:hover:border-indigo-600 dark:hover:text-indigo-300"
+                      ? "border-indigo-400/80 bg-indigo-500 text-white dark:border-indigo-400 dark:bg-indigo-600"
+                      : "border-neutral-200/80 bg-white text-neutral-600 hover:border-indigo-300 hover:bg-indigo-50 hover:text-indigo-700 dark:border-neutral-700/80 dark:bg-neutral-900 dark:text-neutral-300 dark:hover:border-indigo-500 dark:hover:text-indigo-300"
                   }`}
                 >
                   <span>{label}</span>
@@ -275,16 +268,16 @@ export function SearchConfigPanel({
         </div>
       )}
 
-      {/* Divider */}
+      {/* Separador */}
       <div className="h-px bg-neutral-200 dark:bg-neutral-700" />
 
-      {/* Precision slider */}
+      {/* Control de precisión */}
       <div>
         <div className="mb-2 flex items-center justify-between">
           <label htmlFor="similarity-threshold" className="text-[11px] font-bold uppercase tracking-widest text-neutral-400 dark:text-neutral-500">
             Precisión
           </label>
-          <span className="bg-blue-600 px-2 py-0.5 text-xs font-bold text-white tabular-nums">
+          <span className="bg-blue-500 rounded-md px-2 py-0.5 text-xs font-bold text-white tabular-nums">
             {(similarityThreshold * 100).toFixed(0)}%
           </span>
         </div>
@@ -307,7 +300,7 @@ export function SearchConfigPanel({
         <p className="mt-1.5 text-[11px] text-neutral-400 dark:text-neutral-500">Qué tan cercana debe ser la coincidencia con tu búsqueda.</p>
       </div>
 
-      {/* Related limit */}
+      {/* Límite de relacionadas */}
       <div>
         <label htmlFor="related-limit" className="mb-1 block text-[11px] font-bold uppercase tracking-widest text-neutral-400 dark:text-neutral-500">
           Relacionadas
@@ -318,10 +311,10 @@ export function SearchConfigPanel({
             <button
               key={n}
               onClick={() => setRelatedLimit(n)}
-              className={`flex-1 border px-2 py-2.5 sm:py-1 text-xs font-medium transition-all ${
+              className={`flex-1 border rounded-lg px-2 py-2.5 sm:py-1.5 text-xs font-medium transition-all ${
                 relatedLimit === n
-                  ? "border-blue-500 bg-blue-50 text-blue-700 dark:border-blue-400 dark:bg-blue-900/30 dark:text-blue-300"
-                  : "border-neutral-200 bg-white text-neutral-500 hover:border-neutral-400 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-400"
+                  ? "border-blue-400/80 bg-blue-50 text-blue-700 dark:border-blue-400 dark:bg-blue-900/30 dark:text-blue-300"
+                  : "border-neutral-200/80 bg-white text-neutral-500 hover:border-neutral-300 dark:border-neutral-700/80 dark:bg-neutral-800 dark:text-neutral-400"
               }`}
             >
               {n}
@@ -330,7 +323,7 @@ export function SearchConfigPanel({
         </div>
       </div>
 
-      {/* Highlight toggle */}
+      {/* Alternar resaltado */}
       <div className="flex items-center justify-between gap-3">
         <div className="flex items-center gap-2 min-w-0">
           <Highlighter className="h-4 w-4 flex-shrink-0 text-neutral-400" aria-hidden="true" />
@@ -356,16 +349,16 @@ export function SearchConfigPanel({
 
   return (
     <div>
-      {/* Mobile: collapsible trigger */}
+      {/* Móvil: botón colapsable */}
       <button
         onClick={() => setMobileExpanded(!mobileExpanded)}
-        className="lg:hidden w-full flex items-center justify-between border border-neutral-200 bg-white px-4 py-3 text-left transition-colors hover:bg-neutral-50 dark:border-neutral-800 dark:bg-neutral-900 dark:hover:bg-neutral-800/60 mb-3"
+        className="lg:hidden w-full flex items-center justify-between border border-neutral-200/80 bg-white rounded-xl px-4 py-3 text-left transition-colors hover:bg-neutral-50 dark:border-neutral-800/80 dark:bg-neutral-900 dark:hover:bg-neutral-800/60 mb-3"
       >
         <div className="flex items-center gap-2.5">
           <Filter className={`h-4 w-4 flex-shrink-0 ${mobileExpanded ? "text-blue-600 dark:text-blue-400" : "text-neutral-400"}`} />
           <span className="text-sm font-medium text-neutral-700 dark:text-neutral-300">Filtros</span>
           {activeCount > 0 && (
-            <span className="inline-flex h-5 min-w-5 items-center justify-center bg-blue-600 px-1.5 text-[11px] font-semibold tabular-nums text-white">
+            <span className="inline-flex h-5 min-w-5 items-center justify-center bg-blue-500 rounded-full px-1.5 text-[11px] font-semibold tabular-nums text-white">
               {activeCount}
             </span>
           )}
@@ -375,9 +368,9 @@ export function SearchConfigPanel({
         </svg>
       </button>
 
-      {/* Mobile expanded content */}
+      {/* Móvil: contenido expandido */}
       {mobileExpanded && (
-        <div className="lg:hidden border border-neutral-200 bg-white dark:border-neutral-800 dark:bg-neutral-900 p-4 mb-3 animate-slide-down">
+        <div className="lg:hidden border border-neutral-200/80 bg-white rounded-xl dark:border-neutral-800/80 dark:bg-neutral-900 p-4 mb-3 animate-slide-down">
           {filterContent}
           <div className="flex items-center mt-4 pt-3 border-t border-neutral-100 dark:border-neutral-800" style={{ justifyContent: hasActiveFilters ? "space-between" : "flex-end" }}>
             {hasActiveFilters && (
@@ -387,7 +380,7 @@ export function SearchConfigPanel({
             )}
             <button
               onClick={() => setMobileExpanded(false)}
-              className="bg-blue-600 px-4 py-1.5 text-xs font-semibold text-white hover:bg-blue-700 transition-colors"
+              className="bg-blue-500 rounded-lg px-4 py-1.5 text-xs font-semibold text-white hover:bg-blue-600 transition-colors"
             >
               Listo
             </button>
@@ -395,8 +388,8 @@ export function SearchConfigPanel({
         </div>
       )}
 
-      {/* Desktop: always-visible sidebar */}
-      <div className="hidden lg:block border border-neutral-200 bg-white dark:border-neutral-800 dark:bg-neutral-900 p-5">
+      {/* Escritorio: barra lateral siempre visible */}
+      <div className="hidden lg:block border border-neutral-200/80 bg-white rounded-xl dark:border-neutral-800/80 dark:bg-neutral-900 p-5">
         <div className="flex items-center justify-between mb-4">
           <span className="flex items-center gap-2 text-sm font-semibold text-neutral-900 dark:text-neutral-100">
             <Filter className="h-4 w-4 text-neutral-400" />

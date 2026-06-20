@@ -219,6 +219,7 @@ export interface ResolutionItem {
     resoluciones_citadas?: string[];
     archivo_origen?: string;
   };
+  secciones?: { resultando?: string; considerando?: string; por_tanto?: string };
   vector?: number[];
   descriptores?: string[];
 }
