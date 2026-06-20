@@ -1,228 +1,133 @@
-import React, { useState } from "react";
-import { useSearchIndex, ResolutionItem, DESCRIPTOR_PATTERNS, RESULTADO_LABELS, TIPO_LABELS, ResultadoType, TipoProcedimientoType } from "@/context/SearchContext";
-import { findMostSimilar } from "@/utils/semanticSimilarity";
+import React, { useState, useCallback } from "react";
+import { useSearchIndex, ResolutionItem, DESCRIPTOR_PATTERNS, DESCRIPTOR_LABELS, RESULTADO_LABELS, TIPO_LABELS, ResultadoType } from "@/context/SearchContext";
 import { highlightText, buildQueryPatterns } from "@/utils/highlightText";
-import { RelatedResolutions } from "./RelatedResolutions";
-import { FileText, Calendar, Download, ChevronDown, Building2, User, Search } from "lucide-react";
+import { FileText, Search, ClipboardCopy, Check, Share2 } from "lucide-react";
+import Link from "next/link";
+import { formatCitaCR, fmtFecha } from "@/utils/formatters";
 
-// Tres estados semánticos de resultado: positivo, negativo, neutro.
-// El color codifica el significado legal del resultado; el tono no es arbitrario.
-const RESULTADO_COLORS: Record<ResultadoType, string> = {
-  con_lugar: "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-900/20 dark:text-emerald-300 dark:border-emerald-800",
-  sin_lugar: "bg-neutral-100 text-neutral-700 border-neutral-300 dark:bg-neutral-800 dark:text-neutral-300 dark:border-neutral-700",
-  parcialmente_con_lugar: "bg-emerald-50/60 text-emerald-600 border-emerald-200 dark:bg-emerald-900/10 dark:text-emerald-400 dark:border-emerald-900",
-  archivado: "bg-neutral-100 text-neutral-500 border-neutral-200 dark:bg-neutral-800 dark:text-neutral-400 dark:border-neutral-700",
-  rechazo_de_plano: "bg-neutral-100 text-neutral-600 border-neutral-200 dark:bg-neutral-800 dark:text-neutral-400 dark:border-neutral-700",
-  otro: "bg-neutral-100 text-neutral-500 border-neutral-200 dark:bg-neutral-800 dark:text-neutral-400 dark:border-neutral-700",
-};
-
-// Badges de tipo: todos usan el mismo vocabulario neutro; el significado lo da la etiqueta, no el tono.
-const TIPO_COLORS: Record<TipoProcedimientoType, string> = {
-  DEN: "bg-neutral-100 text-neutral-600 border-neutral-200 dark:bg-neutral-800 dark:text-neutral-400 dark:border-neutral-700",
-  RECONSIDERACION: "bg-neutral-100 text-neutral-600 border-neutral-200 dark:bg-neutral-800 dark:text-neutral-400 dark:border-neutral-700",
-  REVOCATORIA: "bg-neutral-100 text-neutral-600 border-neutral-200 dark:bg-neutral-800 dark:text-neutral-400 dark:border-neutral-700",
-};
-
-const RESULTADO_TOOLTIPS: Record<ResultadoType, string> = {
-  con_lugar: "La denuncia fue aceptada: PRODHAB encontró una infracción",
-  sin_lugar: "La denuncia no fue aceptada: no se encontró infracción",
-  parcialmente_con_lugar: "La denuncia fue aceptada en parte",
-  archivado: "El expediente fue archivado sin resolución de fondo",
-  rechazo_de_plano: "La denuncia fue rechazada sin tramitarse",
-  otro: "Resultado no clasificado",
-};
-
-const TIPO_TOOLTIPS: Record<TipoProcedimientoType, string> = {
-  DEN: "Denuncia: procedimiento iniciado por una parte",
-  RECONSIDERACION: "Reconsideración: solicitud de revisión de una resolución anterior",
-  REVOCATORIA: "Revocatoria: solicitud de anulación de una resolución anterior",
+const BADGE_COLORS: Record<string, string> = {
+  con_lugar: "border-emerald-500 bg-emerald-50 text-emerald-700 dark:bg-emerald-900/20 dark:text-emerald-300 dark:border-emerald-700",
+  parcialmente_con_lugar: "border-amber-500 bg-amber-50 text-amber-700 dark:bg-amber-900/20 dark:text-amber-300 dark:border-amber-700",
+  sin_lugar: "border-red-400 bg-red-50 text-red-700 dark:bg-red-900/20 dark:text-red-300 dark:border-red-700",
+  archivado: "border-neutral-400 bg-neutral-100 text-neutral-600 dark:bg-neutral-800 dark:text-neutral-400 dark:border-neutral-600",
+  rechazo_de_plano: "border-orange-400 bg-orange-50 text-orange-700 dark:bg-orange-900/20 dark:text-orange-300 dark:border-orange-700",
+  otro: "border-blue-400 bg-blue-50 text-blue-700 dark:bg-blue-900/20 dark:text-blue-300 dark:border-blue-700",
 };
 
 interface ResultCardProps {
   item: ResolutionItem;
   index: number;
-  isExpanded: boolean;
-  onToggle: (id: string) => void;
-  related: { item: ResolutionItem; similarity: number }[];
   highlight: (text: string) => React.ReactNode;
-  similarityThreshold: number;
-  relatedLimit: number;
+  onOpen: (item: ResolutionItem) => void;
 }
 
-const ResultCard = React.memo(function ResultCard({
-  item,
-  index,
-  isExpanded,
-  onToggle,
-  related,
-  highlight,
-  similarityThreshold,
-  relatedLimit,
-}: ResultCardProps) {
-  const [relatedExpanded, setRelatedExpanded] = useState(false);
+const ResultCard = React.memo(function ResultCard({ item, index, highlight, onOpen }: ResultCardProps) {
+  const [citaCopied, setCitaCopied] = useState(false);
+
+  const copiarCita = useCallback((e: React.MouseEvent) => {
+    e.stopPropagation();
+    navigator.clipboard.writeText(formatCitaCR(item)).then(() => {
+      setCitaCopied(true);
+      setTimeout(() => setCitaCopied(false), 2000);
+    }).catch(() => {});
+  }, [item]);
+
+  const resultado = item.metadatos?.resultado;
+  const badgeColor = resultado ? (BADGE_COLORS[resultado] ?? BADGE_COLORS.otro) : BADGE_COLORS.otro;
 
   return (
     <article
-      className="group rounded-xl border border-neutral-200 bg-white shadow-sm transition-all duration-200 ease-[cubic-bezier(0.25,1,0.5,1)] hover:shadow-lg dark:border-neutral-800 dark:bg-neutral-900 animate-slide-up"
+      className="group relative bg-white border border-neutral-200 border-l-blue-500 transition-all hover:bg-neutral-50 hover:border-neutral-300 hover:border-l-blue-500 hover:-translate-y-px cursor-pointer dark:bg-neutral-900 dark:border-neutral-800 dark:border-l-blue-500 dark:hover:bg-neutral-800/60 dark:hover:border-neutral-700 dark:hover:border-l-blue-500 animate-slide-up overflow-hidden focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-neutral-950"
       style={{ animationDelay: `${Math.min(index, 4) * 0.05}s` }}
+      tabIndex={0}
+      role="button"
+      aria-label={`Abrir resolución: ${item.titulo}`}
+      onClick={() => onOpen(item)}
+      onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onOpen(item); } }}
     >
       <div className="p-4 sm:p-5">
-        {/* Cabecera: identificador principal + metadatos secundarios + descarga */}
-        <div className="mb-3 flex items-start justify-between gap-3">
-          <div className="min-w-0 flex-1">
-            {item.metadatos?.expediente && (
-              <p
-                className="text-base font-semibold text-neutral-900 dark:text-neutral-100 leading-snug"
-                title="Número de expediente: identificador único del caso ante PRODHAB"
-              >
-                Expediente {item.metadatos.expediente}
-              </p>
-            )}
-            {/* Línea secundaria: resolución + fecha formateada */}
-            {(item.metadatos?.resolucion || item.metadatos?.fecha) && (
-              <p className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs text-neutral-500 dark:text-neutral-400">
-                {item.metadatos?.resolucion && (
-                  <span>{item.metadatos.resolucion}</span>
-                )}
-                {item.metadatos?.resolucion && item.metadatos?.fecha && (
-                  <span className="text-neutral-300 dark:text-neutral-600" aria-hidden="true">·</span>
-                )}
-                {item.metadatos?.fecha && (
-                  <span className="inline-flex items-center gap-1">
-                    <Calendar className="h-3 w-3 flex-shrink-0" aria-hidden="true" />
-                    {new Date(item.metadatos.fecha + "T00:00:00").toLocaleDateString("es-CR", { day: "numeric", month: "long", year: "numeric" })}
-                  </span>
-                )}
-              </p>
-            )}
+        {/* Top row: badge + resolution + date */}
+        <div className="flex items-center gap-2.5 flex-wrap mb-2">
+          {resultado && (
+            <span className={`inline-flex items-center gap-1.5 border px-2 py-0.5 text-[11px] font-bold uppercase tracking-wider ${badgeColor}`}>
+              <span className="w-1.5 h-1.5 rounded-full bg-current" />
+              {RESULTADO_LABELS[resultado]}
+            </span>
+          )}
+          <span className="font-mono text-xs text-neutral-400 dark:text-neutral-500">
+            {item.metadatos?.resolucion ?? ""}
+          </span>
+          <span className="flex-1" />
+          {item.metadatos?.fecha && (
+            <span className="font-mono text-xs text-neutral-400 dark:text-neutral-500">
+              {fmtFecha(item.metadatos.fecha)}
+            </span>
+          )}
+        </div>
 
-            {/* Badges: resultado + tipo procedimiento */}
-            <div className="mt-2 flex flex-wrap items-center gap-1.5">
-              {item.metadatos?.resultado && (
-                <span
-                  className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[11px] font-semibold ${RESULTADO_COLORS[item.metadatos.resultado]}`}
-                  title={RESULTADO_TOOLTIPS[item.metadatos.resultado]}
-                >
-                  {RESULTADO_LABELS[item.metadatos.resultado]}
-                </span>
-              )}
-              {item.metadatos?.tipo_procedimiento && (
-                <span
-                  className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[11px] font-medium ${TIPO_COLORS[item.metadatos.tipo_procedimiento]}`}
-                  title={TIPO_TOOLTIPS[item.metadatos.tipo_procedimiento]}
-                >
-                  {TIPO_LABELS[item.metadatos.tipo_procedimiento]}
-                </span>
-              )}
-            </div>
+        {/* Title */}
+        <h3 className="text-base sm:text-lg font-medium leading-snug tracking-tight text-neutral-900 dark:text-neutral-100 mb-2">
+          {highlight(item.titulo)}
+        </h3>
 
-            {/* Partes: denunciado + firmante */}
-            <div className="mt-2 flex flex-col gap-0.5">
-              {item.metadatos?.denunciado && (
-                <p className="flex items-center gap-1.5 text-xs text-neutral-500 dark:text-neutral-400">
-                  <Building2 className="h-3 w-3 flex-shrink-0 text-neutral-400" aria-hidden="true" />
-                  <span className="font-medium text-neutral-700 dark:text-neutral-300">{item.metadatos.denunciado}</span>
-                </p>
-              )}
-              {item.metadatos?.firmante && (
-                <p className="flex items-center gap-1.5 text-xs text-neutral-400 dark:text-neutral-500">
-                  <User className="h-3 w-3 flex-shrink-0" aria-hidden="true" />
-                  {item.metadatos.firmante}
-                </p>
-              )}
-            </div>
+        {/* Summary / preview text */}
+        <p className="text-sm text-neutral-600 dark:text-neutral-400 leading-relaxed line-clamp-2 mb-3">
+          {highlight(item.texto.slice(0, 250))}
+          {item.texto.length > 250 && "…"}
+        </p>
 
-            {/* Resoluciones citadas */}
-            {item.metadatos?.resoluciones_citadas && item.metadatos.resoluciones_citadas.length > 0 && (
-              <div className="mt-1.5 flex flex-wrap items-center gap-1">
-                <span className="text-[11px] text-neutral-400 dark:text-neutral-500 mr-0.5">Cita:</span>
-                {item.metadatos.resoluciones_citadas.map((r) => (
-                  <span
-                    key={r}
-                    className="rounded bg-neutral-100 px-1.5 py-0.5 font-mono text-[11px] text-neutral-500 dark:bg-neutral-800 dark:text-neutral-400"
-                  >
-                    {r}
-                  </span>
-                ))}
-              </div>
-            )}
-
-          </div>
+        {/* Footer: tipo badge + descriptors + actions */}
+        <div className="flex items-center gap-2 flex-wrap">
+          {item.metadatos?.tipo_procedimiento && (
+            <span className="border border-neutral-200 dark:border-neutral-700 px-2 py-0.5 text-[11px] font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
+              {TIPO_LABELS[item.metadatos.tipo_procedimiento]}
+            </span>
+          )}
+          {item.descriptores && item.descriptores.slice(0, 3).map((d) => (
+            <span key={d} className="font-mono text-[11px] text-neutral-400 dark:text-neutral-500 border border-neutral-200 dark:border-neutral-700 px-1.5 py-px">
+              {DESCRIPTOR_LABELS[d] ?? d}
+            </span>
+          ))}
+          {item.descriptores && item.descriptores.length > 3 && (
+            <span className="text-[11px] text-neutral-400">+{item.descriptores.length - 3}</span>
+          )}
+          <span className="flex-1" />
+          {/* Cite button */}
+          <button
+            onClick={copiarCita}
+            title={citaCopied ? "¡Copiado!" : "Copiar cita"}
+            className={`inline-flex items-center gap-1 border px-3 py-2 sm:px-2 sm:py-1 text-[11px] font-medium transition-all ${
+              citaCopied
+                ? "border-emerald-300 bg-emerald-50 text-emerald-700 dark:border-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300"
+                : "border-neutral-200 bg-white text-neutral-500 hover:border-neutral-400 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-400"
+            }`}
+          >
+            {citaCopied ? <Check className="w-3 h-3" /> : <ClipboardCopy className="w-3 h-3" />}
+            {citaCopied ? "Copiado" : "Citar"}
+          </button>
+          {item.metadatos?.resolucion && (
+            <Link
+              href={`/grafo/#res=${item.metadatos.resolucion}`}
+              onClick={(e) => e.stopPropagation()}
+              className="inline-flex items-center gap-1 border border-neutral-200 bg-white px-3 py-2 sm:px-2 sm:py-1 text-[11px] font-medium text-neutral-500 hover:border-neutral-400 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-400 transition-colors"
+              title="Ver en red de citas"
+            >
+              <Share2 className="w-3 h-3" />
+            </Link>
+          )}
           {item.metadatos?.archivo_origen && (
             <a
               href={item.metadatos.archivo_origen}
               target="_blank"
               rel="noopener noreferrer"
-              aria-label={`Descargar resolución${item.metadatos?.resolucion ? ": " + item.metadatos.resolucion : item.metadatos?.expediente ? " " + item.metadatos.expediente : ""}`}
-              className="inline-flex flex-shrink-0 items-center gap-1.5 rounded-md border border-neutral-200 bg-white px-2.5 py-1.5 text-xs font-medium text-neutral-600 transition-all duration-200 hover:bg-neutral-50 hover:border-neutral-300 hover:text-neutral-800 active:scale-95 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-400 dark:hover:border-neutral-600 dark:hover:text-neutral-200"
-              title="Descargar Resolución"
+              onClick={(e) => e.stopPropagation()}
+              className="inline-flex items-center gap-1 border border-neutral-200 bg-white px-3 py-2 sm:px-2 sm:py-1 text-[11px] font-medium text-neutral-500 hover:border-neutral-400 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-400 transition-colors"
+              title="Ver PDF"
             >
-              <Download className="h-3 w-3" aria-hidden="true" />
-              <span className="hidden sm:inline">Descargar</span>
+              <FileText className="w-3 h-3" />
             </a>
           )}
         </div>
-
-        <div className="mb-3 text-neutral-700 dark:text-neutral-300">
-          <p
-            id={`card-text-${item.id}`}
-            className={`text-sm leading-relaxed break-words ${!isExpanded ? "line-clamp-3" : ""}`}
-          >
-            {highlight(isExpanded ? item.texto : item.texto.slice(0, 300))}
-            {!isExpanded && item.texto.length > 300 && "..."}
-          </p>
-          {item.texto.length > 300 && (
-            <button
-              onClick={() => onToggle(item.id)}
-              aria-expanded={isExpanded}
-              aria-controls={`card-text-${item.id}`}
-              className="mt-1 py-2 -my-2 px-1 -mx-1 inline-flex text-sm font-medium text-blue-600 hover:underline dark:text-blue-400 transition-colors"
-            >
-              {isExpanded ? "Ver menos" : "Ver más"}
-            </button>
-          )}
-        </div>
-
-        {/* Resoluciones relacionadas — collapsed by default */}
-        {related.length > 0 && (
-          <div className="mt-3 border-t border-neutral-100 pt-3 dark:border-neutral-800">
-            {!relatedExpanded ? (
-              <button
-                onClick={() => setRelatedExpanded(true)}
-                className="inline-flex items-center gap-1 text-xs text-neutral-500 hover:text-blue-600 dark:text-neutral-400 dark:hover:text-blue-400 transition-colors"
-              >
-                <ChevronDown className="h-3.5 w-3.5" aria-hidden="true" />
-                Ver {related.length} caso{related.length !== 1 ? "s" : ""} relacionado{related.length !== 1 ? "s" : ""}
-              </button>
-            ) : (
-              <div>
-                <button
-                  onClick={() => setRelatedExpanded(false)}
-                  className="mb-3 inline-flex items-center gap-1 text-xs text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300 transition-colors"
-                >
-                  <ChevronDown className="h-3.5 w-3.5 rotate-180" aria-hidden="true" />
-                  Ocultar relacionados
-                </button>
-                <RelatedResolutions
-                  items={related.map((r) => ({
-                    id: r.item.id,
-                    titulo: r.item.titulo,
-                    expediente: r.item.metadatos?.expediente,
-                    resolucion: r.item.metadatos?.resolucion,
-                    date: r.item.metadatos?.fecha,
-                    similarity: r.similarity,
-                    texto: r.item.texto,
-                    archivo_origen: r.item.metadatos?.archivo_origen,
-                  }))}
-                  minSimilarity={similarityThreshold}
-                  maxItems={relatedLimit}
-                  showVisualization={true}
-                  highlight={highlight}
-                />
-              </div>
-            )}
-          </div>
-        )}
       </div>
     </article>
   );
@@ -241,6 +146,7 @@ interface SearchResultsProps {
   page?: number;
   setPage?: (p: number) => void;
   totalItems?: number;
+  onOpenItem?: (item: ResolutionItem) => void;
 }
 
 export function SearchResults({
@@ -256,49 +162,38 @@ export function SearchResults({
   page = 1,
   setPage,
   totalItems = 0,
+  onOpenItem,
 }: SearchResultsProps) {
   const { indexReady } = useSearchIndex();
 
-  // Pre-calcula los patrones para resaltado
   const queryPatterns = React.useMemo(
     () => (highlightEnabled ? buildQueryPatterns(query) : []),
     [query, highlightEnabled],
   );
   const descriptorPatterns = React.useMemo(
-    () =>
-      highlightEnabled
-        ? DESCRIPTOR_PATTERNS.filter(([key]) => selectedDescriptores.includes(key)).map(([, pattern]) => pattern)
-        : [],
+    () => highlightEnabled
+      ? DESCRIPTOR_PATTERNS.filter(([key]) => selectedDescriptores.includes(key)).map(([, pattern]) => pattern)
+      : [],
     [selectedDescriptores, highlightEnabled],
   );
 
   const highlight = React.useCallback(
-    (text: string) =>
-      highlightEnabled
-        ? highlightText(text, queryPatterns, descriptorPatterns)
-        : text,
+    (text: string) => highlightEnabled ? highlightText(text, queryPatterns, descriptorPatterns) : text,
     [highlightEnabled, queryPatterns, descriptorPatterns],
   );
-  const [expandedResults, setExpandedResults] = useState<Set<string>>(
-    new Set(),
-  );
 
-  // Conjunto completo de resultados (sin paginar) para calcular totalPages
   const allResults = React.useMemo(() => {
     if (!query) return [];
     if (useFlexSearch) return filteredItems;
     const lowerQuery = query.toLowerCase();
     return filteredItems.filter(
-      (item) =>
-        item.titulo.toLowerCase().includes(lowerQuery) ||
-        item.texto.toLowerCase().includes(lowerQuery),
+      (item) => item.titulo.toLowerCase().includes(lowerQuery) || item.texto.toLowerCase().includes(lowerQuery),
     );
   }, [query, filteredItems, useFlexSearch]);
 
   const totalPages = Math.max(1, Math.ceil(allResults.length / limit));
   const safePage = Math.min(page, totalPages);
 
-  // Página actual
   const searchResults = React.useMemo(
     () => allResults.slice((safePage - 1) * limit, safePage * limit),
     [allResults, safePage, limit],
@@ -306,42 +201,10 @@ export function SearchResults({
 
   const goToPage = (p: number) => {
     setPage?.(p);
-    window.scrollTo({ top: 0, behavior: "smooth" });
+    const prefersReduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    window.scrollTo({ top: 0, behavior: prefersReduced ? "auto" : "smooth" });
   };
 
-  // Memoriza el cálculo de elementos relacionados para evitar recalcular en cada renderizado
-  const relatedItemsCache = React.useMemo(() => {
-    const cache = new Map<
-      string,
-      { item: ResolutionItem; similarity: number }[]
-    >();
-
-    for (const item of searchResults) {
-      if (item.vector) {
-        const related = findMostSimilar(
-          item.vector,
-          filteredItems.filter((i) => i.id !== item.id),
-          relatedLimit,
-          similarityThreshold,
-          similarityThreshold,
-        );
-        cache.set(item.id, related);
-      }
-    }
-
-    return cache;
-  }, [searchResults, filteredItems, relatedLimit, similarityThreshold]);
-
-  const toggleExpanded = React.useCallback((id: string) => {
-    setExpandedResults((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
-      return next;
-    });
-  }, []);
-
-  // Página de números pre-calculada para evitar reconstruir el array en cada render
   const pageItems = React.useMemo(() =>
     Array.from({ length: totalPages }, (_, i) => i + 1)
       .filter((p) => p === 1 || p === totalPages || Math.abs(p - safePage) <= 1)
@@ -352,7 +215,10 @@ export function SearchResults({
       }, []),
   [totalPages, safePage]);
 
-  // Si el índice no está listo, muestra pantalla de carga
+  const handleOpenItem = React.useCallback((item: ResolutionItem) => {
+    onOpenItem?.(item);
+  }, [onOpenItem]);
+
   if (!indexReady) {
     return (
       <div role="status" aria-live="polite" className="flex flex-col items-center justify-center py-14 text-center">
@@ -362,17 +228,12 @@ export function SearchResults({
             <FileText className="h-5 w-5 text-blue-600 dark:text-blue-400" />
           </div>
         </div>
-        <p className="text-base font-medium text-neutral-700 dark:text-neutral-300">
-          Preparando el índice de resoluciones
-        </p>
-        <p className="mt-1 text-sm text-neutral-500 dark:text-neutral-400">
-          Este paso ocurre una sola vez. Suele tardar 2 a 5 segundos.
-        </p>
+        <p className="text-base font-medium text-neutral-700 dark:text-neutral-300">Preparando el índice de resoluciones</p>
+        <p className="mt-1 text-sm text-neutral-500 dark:text-neutral-400">Este paso ocurre una sola vez.</p>
       </div>
     );
   }
 
-  // Si no se está buscando, muestra mensaje inicial
   if (!isSearching) {
     return (
       <div className="py-10 sm:py-14 text-center">
@@ -381,7 +242,8 @@ export function SearchResults({
           Busca en las resoluciones de PRODHAB
         </h2>
         <p className="text-sm text-neutral-500 dark:text-neutral-400 max-w-md mx-auto">
-          Escribe una pregunta, un tema (videovigilancia, datos bancarios...) o un número de expediente como <span className="font-mono text-xs bg-neutral-100 dark:bg-neutral-800 px-1 py-0.5 rounded">138-07-2023-DEN</span>.
+          Escribe una pregunta, un tema o un número de expediente como{" "}
+          <span className="font-mono text-xs bg-neutral-100 dark:bg-neutral-800 px-1 py-0.5">138-07-2023-DEN</span>.
         </p>
         {totalItems > 0 && (
           <p className="mt-4 text-xs text-neutral-400 dark:text-neutral-600">
@@ -392,7 +254,6 @@ export function SearchResults({
     );
   }
 
-  // Si se está buscando y no hay resultados, muestra mensaje de no encontrado
   if (isSearching && searchResults.length === 0) {
     return (
       <div className="py-10 sm:py-12 text-center">
@@ -401,23 +262,9 @@ export function SearchResults({
           Sin resultados para &ldquo;{query}&rdquo;
         </h2>
         <div className="mt-4 text-left max-w-xs mx-auto space-y-2">
-          <p className="text-xs font-medium text-neutral-400 dark:text-neutral-500 uppercase tracking-wide">
-            Intenta lo siguiente
-          </p>
-          <p className="text-sm text-neutral-600 dark:text-neutral-400">
-            Usar menos palabras o una sola palabra clave
-          </p>
-          {selectedDescriptores.length > 0 && (
-            <p className="text-sm text-neutral-600 dark:text-neutral-400">
-              Quitar los filtros de tema activos ({selectedDescriptores.length} activo{selectedDescriptores.length !== 1 ? "s" : ""})
-            </p>
-          )}
-          <p className="text-sm text-neutral-600 dark:text-neutral-400">
-            Abrir <strong className="font-medium text-neutral-700 dark:text-neutral-300">Filtros &rsaquo; Opciones avanzadas</strong> y reducir la precisión de coincidencias
-          </p>
-          <p className="text-sm text-neutral-600 dark:text-neutral-400">
-            Buscar por número de expediente, ej. <span className="font-mono text-xs bg-neutral-100 dark:bg-neutral-800 px-1.5 py-0.5 rounded">00456-2023</span>
-          </p>
+          <p className="text-xs font-medium text-neutral-400 dark:text-neutral-500 uppercase tracking-wide">Sugerencias</p>
+          <p className="text-sm text-neutral-600 dark:text-neutral-400">Usar menos palabras o una sola palabra clave</p>
+          <p className="text-sm text-neutral-600 dark:text-neutral-400">Bajar el control de Precisión en el panel de filtros para ampliar resultados</p>
         </div>
       </div>
     );
@@ -425,30 +272,6 @@ export function SearchResults({
 
   return (
     <div>
-      {/* Controles Expandir/Colapsar Todos */}
-      {searchResults.length > 0 && (
-        <div className="mb-3 flex items-center justify-end gap-3">
-          <button
-            onClick={() =>
-              setExpandedResults(new Set(searchResults.map((item) => item.id)))
-            }
-            aria-label="Ver texto completo de todos los resultados"
-            className="py-2 -my-2 px-1 -mx-1 text-xs text-blue-600 hover:underline dark:text-blue-400 transition-colors"
-          >
-            Ver todos
-          </button>
-          <span className="text-neutral-300 dark:text-neutral-700" aria-hidden="true">·</span>
-          <button
-            onClick={() => setExpandedResults(new Set())}
-            aria-label="Colapsar texto de todos los resultados"
-            className="py-2 -my-2 px-1 -mx-1 text-xs text-neutral-500 hover:underline dark:text-neutral-400 transition-colors"
-          >
-            Colapsar todos
-          </button>
-        </div>
-      )}
-
-      {/* Resultados */}
       <div className="space-y-3">
         <h2 className="sr-only">Resultados de búsqueda</h2>
         {searchResults.map((item, index) => (
@@ -456,26 +279,20 @@ export function SearchResults({
             key={item.id}
             item={item}
             index={index}
-            isExpanded={expandedResults.has(item.id)}
-            onToggle={toggleExpanded}
-            related={relatedItemsCache.get(item.id) ?? []}
             highlight={highlight}
-            similarityThreshold={similarityThreshold}
-            relatedLimit={relatedLimit}
+            onOpen={handleOpenItem}
           />
         ))}
       </div>
 
-      {/* Paginación */}
       {totalPages > 1 && (
         <nav aria-label="Paginación de resultados" className="mt-6">
-          {/* Vista móvil: Anterior / Página X de Y / Siguiente */}
           <div className="flex items-center justify-between gap-2 sm:hidden">
             <button
               onClick={() => goToPage(safePage - 1)}
               disabled={safePage === 1}
               aria-label="Página anterior"
-              className="flex items-center gap-1 rounded-lg border border-neutral-300 bg-white px-4 py-2.5 text-sm font-medium text-neutral-600 transition-all duration-150 hover:bg-neutral-50 hover:border-neutral-400 disabled:pointer-events-none disabled:opacity-30 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-400 dark:hover:bg-neutral-800"
+              className="border border-neutral-300 bg-white px-4 py-2.5 text-sm font-medium text-neutral-600 hover:bg-neutral-50 disabled:opacity-30 disabled:pointer-events-none dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-400"
             >
               ‹ Anterior
             </button>
@@ -486,25 +303,21 @@ export function SearchResults({
               onClick={() => goToPage(safePage + 1)}
               disabled={safePage === totalPages}
               aria-label="Página siguiente"
-              className="flex items-center gap-1 rounded-lg border border-neutral-300 bg-white px-4 py-2.5 text-sm font-medium text-neutral-600 transition-all duration-150 hover:bg-neutral-50 hover:border-neutral-400 disabled:pointer-events-none disabled:opacity-30 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-400 dark:hover:bg-neutral-800"
+              className="border border-neutral-300 bg-white px-4 py-2.5 text-sm font-medium text-neutral-600 hover:bg-neutral-50 disabled:opacity-30 disabled:pointer-events-none dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-400"
             >
               Siguiente ›
             </button>
           </div>
 
-          {/* Vista escritorio: barra completa con números de página */}
           <div className="hidden sm:flex items-center justify-center gap-1">
-            {/* Página anterior */}
             <button
               onClick={() => goToPage(safePage - 1)}
               disabled={safePage === 1}
               aria-label="Página anterior"
-              className="rounded-lg border border-neutral-300 bg-white px-3 py-2 text-sm text-neutral-600 transition-all duration-150 hover:bg-neutral-50 hover:border-neutral-400 disabled:pointer-events-none disabled:opacity-30 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-400 dark:hover:bg-neutral-800"
+              className="border border-neutral-300 bg-white px-3 py-2 text-sm text-neutral-600 hover:bg-neutral-50 disabled:opacity-30 disabled:pointer-events-none dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-400"
             >
               ‹ Anterior
             </button>
-
-            {/* Números de página */}
             <div className="flex items-center gap-1">
               {pageItems.map((p, idx) =>
                 p === "…" ? (
@@ -514,11 +327,10 @@ export function SearchResults({
                     key={p}
                     onClick={() => goToPage(p as number)}
                     aria-current={p === safePage ? "page" : undefined}
-                    aria-label={`Página ${p}`}
-                    className={`min-w-[2.25rem] rounded-lg border px-2.5 py-2 text-sm font-medium transition-all duration-150 ${
+                    className={`min-w-[2.25rem] border px-2.5 py-2 text-sm font-medium transition-all ${
                       p === safePage
-                        ? "border-blue-500 bg-blue-600 text-white shadow-sm"
-                        : "border-neutral-300 bg-white text-neutral-600 hover:bg-neutral-50 hover:border-neutral-400 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-400 dark:hover:bg-neutral-800"
+                        ? "border-blue-500 bg-blue-600 text-white"
+                        : "border-neutral-300 bg-white text-neutral-600 hover:bg-neutral-50 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-400"
                     }`}
                   >
                     {p}
@@ -526,13 +338,11 @@ export function SearchResults({
                 )
               )}
             </div>
-
-            {/* Página siguiente */}
             <button
               onClick={() => goToPage(safePage + 1)}
               disabled={safePage === totalPages}
               aria-label="Página siguiente"
-              className="rounded-lg border border-neutral-300 bg-white px-3 py-2 text-sm text-neutral-600 transition-all duration-150 hover:bg-neutral-50 hover:border-neutral-400 disabled:pointer-events-none disabled:opacity-30 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-400 dark:hover:bg-neutral-800"
+              className="border border-neutral-300 bg-white px-3 py-2 text-sm text-neutral-600 hover:bg-neutral-50 disabled:opacity-30 disabled:pointer-events-none dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-400"
             >
               Siguiente ›
             </button>

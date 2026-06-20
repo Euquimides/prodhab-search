@@ -13,9 +13,8 @@ import {
   Legend,
 } from "chart.js";
 import { Bar, Scatter, Doughnut } from "react-chartjs-2";
-import Link from "next/link";
 import Footer from "@/components/Footer";
-import { DarkModeToggle } from "@/components/DarkModeToggle";
+import { SiteHeader } from "@/components/SiteHeader";
 import {
   calculateStatistics,
   DatasetStatistics,
@@ -64,17 +63,19 @@ interface ChartCardProps {
   title: string;
   children: React.ReactNode;
   className?: string;
+  chartLabel?: string;
+  headingLevel?: "h2" | "h3";
 }
 
-function ChartCard({ title, children, className = "" }: ChartCardProps) {
+function ChartCard({ title, children, className = "", chartLabel, headingLevel: Heading = "h3" }: ChartCardProps) {
   return (
     <div
-      className={`bg-white dark:bg-neutral-900 rounded-xl shadow-sm border border-neutral-200 dark:border-neutral-800 p-4 sm:p-6 ${className}`}
+      className={`bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 p-4 sm:p-6 ${className}`}
     >
-      <h3 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100 mb-4">
+      <Heading className="text-lg font-semibold text-neutral-900 dark:text-neutral-100 mb-4">
         {title}
-      </h3>
-      <div className="relative">{children}</div>
+      </Heading>
+      <div className="relative" {...(chartLabel ? { role: "img", "aria-label": chartLabel } : {})}>{children}</div>
     </div>
   );
 }
@@ -134,11 +135,11 @@ export default function EstadisticasPage() {
   if (error) {
     return (
       <div className="min-h-screen bg-white dark:bg-neutral-950 flex items-center justify-center">
-        <div className="rounded-lg border border-red-200 bg-red-50 p-6 text-center dark:border-red-800 dark:bg-red-900/30">
+        <div className="border border-red-200 bg-red-50 p-6 text-center dark:border-red-800 dark:bg-red-900/30">
           <p className="font-medium text-red-700 dark:text-red-300 mb-4">{error}</p>
           <button
             onClick={loadData}
-            className="px-4 py-2 rounded-lg bg-blue-600 text-white text-sm font-medium hover:bg-blue-700 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+            className="px-4 py-2 bg-blue-600 text-white text-sm font-medium hover:bg-blue-700 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
           >
             Reintentar
           </button>
@@ -150,7 +151,7 @@ export default function EstadisticasPage() {
   if (!stats) return null;
 
   // Theme-aware chart colors
-  const gridColor = isDark ? "rgba(255,255,255,0.07)" : "rgba(0,0,0,0.05)";
+  const gridColor = isDark ? "rgba(147, 165, 235, 0.07)" : "rgba(37, 99, 235, 0.05)";
   const tickColor = isDark ? "#a3a3a3" : "#737373";
 
   const resultadoKeys = Object.keys(stats.resultadoDistribution).sort(
@@ -338,18 +339,10 @@ export default function EstadisticasPage() {
 
   return (
     <div className="min-h-screen bg-white dark:bg-neutral-950 flex flex-col">
-      <div className="flex justify-end px-4 sm:px-6 pt-4 sm:pt-6">
-        <DarkModeToggle />
-      </div>
+      <SiteHeader subtitle="Estadísticas" />
       <div className="mx-auto max-w-7xl px-4 sm:px-6 py-6 sm:py-8 flex-1 w-full">
         {/* Header */}
         <div className="mb-8 sm:mb-12">
-          <Link
-            href="/"
-            className="inline-flex items-center text-sm text-blue-600 dark:text-blue-400 hover:underline mb-4"
-          >
-            ← Volver al buscador
-          </Link>
           <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold tracking-tight text-neutral-900 dark:text-neutral-100">
             Estadísticas del conjunto de datos
           </h1>
@@ -363,7 +356,7 @@ export default function EstadisticasPage() {
 
         {/* Records per Year */}
         <section className="mb-8 sm:mb-12">
-          <ChartCard title="Resoluciones por año">
+          <ChartCard title="Resoluciones por año" headingLevel="h2" chartLabel="Gráfico de barras mostrando la cantidad de resoluciones emitidas por año">
             <div className="h-64 sm:h-80">
               <Bar data={recordsPerYearData} options={barOptions} />
             </div>
@@ -422,6 +415,7 @@ export default function EstadisticasPage() {
               <ChartCard
                 title="Mapa de agrupación temática"
                 className="mb-6"
+                chartLabel="Gráfico de dispersión mostrando resoluciones agrupadas por similitud temática"
               >
                 <p className="text-xs text-neutral-500 dark:text-neutral-400 mb-4">
                   Cada punto es una resolución. Los puntos del mismo color
@@ -436,7 +430,7 @@ export default function EstadisticasPage() {
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               {clusterSizeData && (
-                <ChartCard title="Tamaño de cada grupo temático">
+                <ChartCard title="Tamaño de cada grupo temático" chartLabel="Gráfico circular mostrando el tamaño relativo de cada grupo temático">
                   <div className="h-64 sm:h-80 flex items-center justify-center">
                     <Doughnut data={clusterSizeData} options={chartOptions} />
                   </div>
@@ -444,7 +438,7 @@ export default function EstadisticasPage() {
               )}
 
               {clusterTimeData && (
-                <ChartCard title="Evolución de grupos temáticos por año">
+                <ChartCard title="Evolución de grupos temáticos por año" chartLabel="Gráfico de barras apiladas mostrando la distribución de grupos temáticos a lo largo del tiempo">
                   <div className="h-64 sm:h-80">
                     <Bar
                       data={clusterTimeData}
@@ -471,7 +465,7 @@ export default function EstadisticasPage() {
             </div>
 
             {/* Cluster details table */}
-            <div className="mt-6 bg-white dark:bg-neutral-900 rounded-xl shadow-sm border border-neutral-200 dark:border-neutral-800 p-4 sm:p-6 overflow-x-auto">
+            <div className="mt-6 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 p-4 sm:p-6 overflow-x-auto">
               <h3 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100 mb-4">
                 Detalle de grupos temáticos
               </h3>
@@ -548,12 +542,12 @@ export default function EstadisticasPage() {
             Resultados y Recursos
           </h2>
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <ChartCard title="Resultado de las resoluciones">
+            <ChartCard title="Resultado de las resoluciones" chartLabel="Gráfico circular mostrando la distribución de resultados de las resoluciones">
               <div className="h-64 sm:h-80 flex items-center justify-center">
                 <Doughnut data={resultadoData} options={chartOptions} />
               </div>
             </ChartCard>
-            <ChartCard title="Recurso disponible">
+            <ChartCard title="Recurso disponible" chartLabel="Gráfico circular mostrando la distribución de recursos disponibles">
               <div className="h-64 sm:h-80 flex items-center justify-center">
                 <Doughnut data={recursoData} options={chartOptions} />
               </div>
