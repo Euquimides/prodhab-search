@@ -181,6 +181,17 @@ export const RESULTADO_LABELS: Record<ResultadoType, string> = {
   otro: "Otro",
 };
 
+// Colores hex por resultado para superficies que no usan clases Tailwind (p.ej. canvas WebGL).
+// Mismos tonos semánticos que los badges en SearchResults (emerald/amber/red/orange/blue/neutral).
+export const RESULTADO_COLORS: Record<ResultadoType, string> = {
+  con_lugar: "#10b981",
+  parcialmente_con_lugar: "#f59e0b",
+  sin_lugar: "#ef4444",
+  archivado: "#a3a3a3",
+  rechazo_de_plano: "#f97316",
+  otro: "#3b82f6",
+};
+
 export const TIPO_LABELS: Record<TipoProcedimientoType, string> = {
   DEN: "Denuncia",
   RECONSIDERACION: "Reconsideración",
@@ -218,6 +229,7 @@ interface SearchContextType {
   lastSearchQuery: string | null;
   setLastSearchQuery: (q: string | null) => void;
   search: (query: string, limit?: number) => void;
+  queryIndex: (query: string, limit?: number) => ResolutionItem[];
   allItems: ResolutionItem[];
   error: string | null;
 }
@@ -299,16 +311,12 @@ export const SearchProvider: React.FC<{ children: React.ReactNode }> = ({
     loadData();
   }, []);
 
-  // Función de búsqueda
-  const search = useCallback((query: string, limit: number = 10) => {
-    if (!indexRef.current || !query) {
-      setSearchResults([]);
-      return;
-    }
+  // Consulta pura al índice FlexSearch: devuelve los items coincidentes sin mutar estado.
+  // Reutilizable desde cualquier vista (búsqueda principal, grafo de citas, etc.).
+  const queryIndex = useCallback((query: string, limit: number = 10): ResolutionItem[] => {
+    if (!indexRef.current || !query) return [];
     // FlexSearch Document devuelve un array de resultados por cada campo indexado.
-    const raw: { result: string[] }[] = indexRef.current.search(query, {
-      limit,
-    });
+    const raw: { result: string[] }[] = indexRef.current.search(query, { limit });
     const seen = new Set<string>();
     const found: ResolutionItem[] = [];
     for (const field of raw) {
@@ -320,8 +328,13 @@ export const SearchProvider: React.FC<{ children: React.ReactNode }> = ({
         }
       }
     }
-    setSearchResults(found);
+    return found;
   }, []);
+
+  // Función de búsqueda con estado (vista principal)
+  const search = useCallback((query: string, limit: number = 10) => {
+    setSearchResults(queryIndex(query, limit));
+  }, [queryIndex]);
 
   return (
     <SearchContext.Provider
@@ -331,6 +344,7 @@ export const SearchProvider: React.FC<{ children: React.ReactNode }> = ({
         lastSearchQuery,
         setLastSearchQuery,
         search,
+        queryIndex,
         allItems,
         error,
       }}

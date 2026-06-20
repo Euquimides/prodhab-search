@@ -1,9 +1,11 @@
-import { Inter } from "next/font/google";
+import { Inter, Space_Mono } from "next/font/google";
 import Script from "next/script";
 import { SearchProvider } from "@/context/SearchContext";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
 import "./globals.css";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-sans" });
+const spaceMono = Space_Mono({ subsets: ["latin"], weight: ["400", "700"], variable: "--font-mono" });
 
 export const metadata = {
   title: "PrivataSearch",
@@ -28,7 +30,7 @@ export default function RootLayout({
 }) {
   // suppressHydrationWarning: la clase de modo oscuro es inyectada por script inline antes de la hidratación
   return (
-    <html lang="es" className={inter.variable} suppressHydrationWarning>
+    <html lang="es" className={`${inter.variable} ${spaceMono.variable}`} suppressHydrationWarning>
       <head>
         <link rel="icon" type="image/x-icon" href="/favicon.ico" />
         {/* Precargar índice de resoluciones */}
@@ -44,7 +46,7 @@ export default function RootLayout({
             __html: `
               try {
                 var t = localStorage.getItem('ps_theme');
-                if (t === 'dark') {
+                if (t === 'dark' || (t !== 'light' && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
                   document.documentElement.classList.add('dark');
                 }
               } catch {}
@@ -72,7 +74,7 @@ export default function RootLayout({
         />
       </head>
       <body>
-        <SearchProvider>{children}</SearchProvider>
+        <ErrorBoundary><SearchProvider>{children}</SearchProvider></ErrorBoundary>
         <Script
           src="https://chat.crafterq.ai/embed.js"
           data-q-id="019e6736-9b8d-759d-a527-7ddf26988800"

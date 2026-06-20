@@ -1,21 +1,12 @@
-import Link from "next/link";
 import Footer from "@/components/Footer";
-import { DarkModeToggle } from "@/components/DarkModeToggle";
+import { SiteHeader } from "@/components/SiteHeader";
 
 export default function DisclaimerPage() {
   return (
     <div className="min-h-screen bg-white dark:bg-neutral-950 flex flex-col">
-      <div className="flex justify-end px-4 sm:px-6 pt-4 sm:pt-6">
-        <DarkModeToggle />
-      </div>
+      <SiteHeader subtitle="Descargo" />
 
       <div className="mx-auto max-w-4xl px-6 py-8 md:py-12 flex-1">
-        <Link
-          href="/"
-          className="inline-flex items-center text-sm text-blue-600 dark:text-blue-400 hover:underline mb-6"
-        >
-          ← Volver al buscador
-        </Link>
         <h1 className="mb-8 text-3xl font-bold tracking-tight text-neutral-900 dark:text-neutral-100 md:text-4xl">
           Descargo de Responsabilidad
         </h1>

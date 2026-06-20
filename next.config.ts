@@ -4,10 +4,10 @@
 
 const isProd = process.env.NODE_ENV === 'production';
 const isCustomDomain = process.env.CUSTOM_DOMAIN === 'true';
-const nextConfig = {
+const nextConfig: import('next').NextConfig = {
     trailingSlash: true,
     output: 'export',
-    // distDir: 'out/privatasearch', // Directorio de salida personalizado para exportación estática local
+    ...(isProd && !isCustomDomain && { distDir: 'out/privatasearch' }),
     images: {
         unoptimized: true,
     },

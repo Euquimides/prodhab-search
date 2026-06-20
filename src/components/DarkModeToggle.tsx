@@ -6,10 +6,16 @@ export function DarkModeToggle() {
 
   useEffect(() => {
     try {
-      setIsDark(
-        localStorage.getItem("ps_theme") === "dark" ||
-          document.documentElement.classList.contains("dark"),
-      );
+      const stored = localStorage.getItem("ps_theme");
+      if (stored) {
+        const dark = stored === "dark";
+        setIsDark(dark);
+        document.documentElement.classList.toggle("dark", dark);
+      } else {
+        const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+        setIsDark(prefersDark);
+        document.documentElement.classList.toggle("dark", prefersDark);
+      }
     } catch {
       setIsDark(document.documentElement.classList.contains("dark"));
     }
@@ -20,11 +26,7 @@ export function DarkModeToggle() {
     setIsDark(next);
     document.documentElement.classList.toggle("dark", next);
     try {
-      if (next) {
-        localStorage.setItem("ps_theme", "dark");
-      } else {
-        localStorage.removeItem("ps_theme");
-      }
+      localStorage.setItem("ps_theme", next ? "dark" : "light");
     } catch {}
   };
 

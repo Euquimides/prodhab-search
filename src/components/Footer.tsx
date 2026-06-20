@@ -8,7 +8,7 @@ export default function Footer() {
       <div className="mx-auto max-w-4xl px-4 sm:px-6 py-6 sm:py-8">
         <div className="flex flex-col items-center justify-center gap-3 text-center">
           <p className="text-xs sm:text-sm text-neutral-600 dark:text-neutral-400">
-            Proyecto de Código Abierto creado por:
+            Un proyecto de código abierto de
           </p>
           <div className="flex flex-col items-center gap-2">
             <a
@@ -17,7 +17,7 @@ export default function Footer() {
             >
               <Image
                 src="/logo_light.png"
-                alt="Vasquez Drexler — sitio web del autor"
+                alt="Vasquez Drexler, sitio web del autor"
                 width={160}
                 height={56}
                 className="h-12 sm:h-14 w-auto block dark:hidden"
@@ -35,7 +35,7 @@ export default function Footer() {
               href="https://github.com/Euquimides/privatasearch"
               target="_blank"
               rel="noopener noreferrer"
-              className="mt-2 inline-flex items-center rounded-md bg-neutral-100 px-4 py-2 text-xs font-medium text-neutral-700 hover:bg-neutral-200 active:scale-95 transition-all dark:bg-neutral-900 dark:text-neutral-300 dark:hover:bg-neutral-800"
+              className="mt-2 inline-flex items-center bg-neutral-100 px-4 py-2 text-xs font-medium text-neutral-700 hover:bg-neutral-200 active:scale-95 transition-all dark:bg-neutral-900 dark:text-neutral-300 dark:hover:bg-neutral-800"
             >
               GitHub
             </a>
@@ -52,6 +52,15 @@ export default function Footer() {
               className="py-2 -my-2 px-1 -mx-1 text-xs text-neutral-500 hover:underline dark:text-neutral-400"
             >
               Estadísticas
+            </Link>
+            <span className="hidden sm:inline text-neutral-300 dark:text-neutral-700">
+              ·
+            </span>
+            <Link
+              href="/grafo"
+              className="py-2 -my-2 px-1 -mx-1 text-xs text-neutral-500 hover:underline dark:text-neutral-400"
+            >
+              Red de citas
             </Link>
             <span className="hidden sm:inline text-neutral-300 dark:text-neutral-700">
               ·

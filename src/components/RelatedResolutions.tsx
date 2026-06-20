@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Calendar, Download } from "lucide-react";
+import { Calendar, FileText } from "lucide-react";
 import {
   getSimilarityLabel,
   getSimilarityColor,
@@ -79,15 +79,15 @@ export function RelatedResolutions({
           {showVisualization && (
             <div className="flex items-center gap-2 text-xs text-neutral-400 dark:text-neutral-500">
               <span className="flex items-center gap-1">
-                <span className="inline-block h-1.5 w-1.5 rounded-full bg-blue-500" aria-hidden="true" />
+                <span className="inline-block h-1.5 w-1.5  bg-blue-500" aria-hidden="true" />
                 Alta
               </span>
               <span className="flex items-center gap-1">
-                <span className="inline-block h-1.5 w-1.5 rounded-full bg-blue-400/60" aria-hidden="true" />
+                <span className="inline-block h-1.5 w-1.5  bg-blue-400/60" aria-hidden="true" />
                 Media
               </span>
               <span className="flex items-center gap-1">
-                <span className="inline-block h-1.5 w-1.5 rounded-full bg-neutral-400" aria-hidden="true" />
+                <span className="inline-block h-1.5 w-1.5  bg-neutral-400" aria-hidden="true" />
                 Baja
               </span>
             </div>
@@ -96,17 +96,17 @@ export function RelatedResolutions({
         <div className="flex items-center gap-3">
           <button
             onClick={handleExpandAll}
-            aria-label="Ver texto de todas las resoluciones relacionadas"
+            aria-label="Expandir texto de todas las resoluciones relacionadas"
             className="py-2 -my-2 px-1 -mx-1 text-xs text-neutral-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
           >
-            Ver todos
+            Expandir textos
           </button>
           <button
             onClick={handleCollapseAll}
-            aria-label="Colapsar texto de todas las resoluciones relacionadas"
+            aria-label="Contraer texto de todas las resoluciones relacionadas"
             className="py-2 -my-2 px-1 -mx-1 text-xs text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200 transition-colors"
           >
-            Colapsar
+            Contraer
           </button>
         </div>
       </div>
@@ -119,7 +119,7 @@ export function RelatedResolutions({
           return (
             <li
               key={item.id}
-              className={`rounded-lg border p-3 transition-shadow hover:shadow-sm ${colors.bg} ${colors.border}`}
+              className={`border p-3 transition-colors ${colors.bg} ${colors.border}`}
             >
               <div className="flex flex-col gap-2">
                 {/* Metadatos y botón descarga */}
@@ -127,17 +127,17 @@ export function RelatedResolutions({
                   <div className="flex flex-col gap-1 flex-1">
                     <div className="flex flex-wrap items-center gap-2 text-xs">
                       {item.expediente && (
-                        <span className="rounded-md bg-blue-100 px-2.5 py-1 text-xs font-medium text-blue-700 dark:bg-blue-900/50 dark:text-blue-300">
-                          Exp: {item.expediente}
+                        <span className=" bg-blue-100 px-2.5 py-1 text-xs font-medium text-blue-700 dark:bg-blue-900/50 dark:text-blue-300">
+                          Expediente: {item.expediente}
                         </span>
                       )}
                       {item.resolucion && (
-                        <span className="rounded-md bg-neutral-100 px-2.5 py-1 text-xs font-medium text-neutral-600 dark:bg-neutral-800 dark:text-neutral-300">
-                          Res: {item.resolucion}
+                        <span className=" bg-neutral-100 px-2.5 py-1 text-xs font-medium text-neutral-600 dark:bg-neutral-800 dark:text-neutral-300">
+                          Resolución: {item.resolucion}
                         </span>
                       )}
                       {item.date && (
-                        <span className="rounded-md bg-neutral-100 px-2.5 py-1 text-xs font-medium text-neutral-700 dark:bg-neutral-800 dark:text-neutral-300 flex items-center gap-1.5">
+                        <span className=" bg-neutral-100 px-2.5 py-1 text-xs font-medium text-neutral-700 dark:bg-neutral-800 dark:text-neutral-300 flex items-center gap-1.5">
                           <Calendar className="h-3 w-3" aria-hidden="true" />
                           {item.date}
                         </span>
@@ -151,12 +151,12 @@ export function RelatedResolutions({
                       href={item.archivo_origen}
                       target="_blank"
                       rel="noopener noreferrer"
-                      aria-label={`Descargar resolución${item.resolucion ? ": " + item.resolucion : item.expediente ? " " + item.expediente : ""}`}
-                      className="inline-flex items-center gap-1.5 rounded-md border border-neutral-300 bg-white px-3 py-2 sm:py-1.5 text-xs font-medium text-neutral-700 transition-all duration-200 hover:bg-neutral-50 hover:border-neutral-400 active:scale-95 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-300 dark:hover:bg-neutral-800 dark:hover:border-neutral-600"
-                      title="Descargar Resolución"
+                      aria-label={`Ver PDF${item.resolucion ? ": " + item.resolucion : item.expediente ? " " + item.expediente : ""}`}
+                      className="inline-flex items-center gap-1.5  border border-neutral-300 bg-white px-3 py-2 sm:py-1.5 text-xs font-medium text-neutral-700 transition-all duration-200 hover:bg-neutral-50 hover:border-neutral-400 active:scale-95 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-300 dark:hover:bg-neutral-800 dark:hover:border-neutral-600"
+                      title="Ver PDF"
                     >
-                      <Download className="h-3.5 w-3.5" aria-hidden="true" />
-                      <span className="hidden sm:inline">Descargar</span>
+                      <FileText className="h-3.5 w-3.5" aria-hidden="true" />
+                      <span className="hidden sm:inline">Ver PDF</span>
                     </a>
                   )}
                 </div>
@@ -171,7 +171,7 @@ export function RelatedResolutions({
                     aria-valuemax={100}
                     aria-label={`Similitud: ${label} (${Math.round(item.similarity * 100)}%)`}
                   >
-                    <div className="h-1.5 w-full overflow-hidden rounded-full bg-neutral-200 dark:bg-neutral-700">
+                    <div className="h-1.5 w-full overflow-hidden  bg-neutral-200 dark:bg-neutral-700">
                       <div
                         className={`h-full transition-all duration-300 ease-[cubic-bezier(0.25,1,0.5,1)] ${
                           item.similarity >= 0.7
