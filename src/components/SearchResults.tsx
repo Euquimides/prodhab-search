@@ -95,13 +95,16 @@ const ResultCard = React.memo(function ResultCard({ item, index, highlight, onOp
           <button
             onClick={copiarCita}
             title={citaCopied ? "¡Copiado!" : "Copiar cita"}
-            className={`inline-flex items-center gap-1 border rounded-md px-3 py-2 sm:px-2.5 sm:py-1.5 min-h-8 text-[11px] font-medium transition-all ${
+            className={`inline-flex items-center gap-1 border rounded-md px-3 py-2 sm:px-2.5 sm:py-1.5 min-h-8 text-[11px] font-medium transition-all duration-200 ${
               citaCopied
                 ? "border-emerald-300 bg-emerald-50 text-emerald-700 dark:border-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300"
                 : "border-neutral-200/80 bg-white text-neutral-500 hover:border-neutral-400 dark:border-neutral-700/80 dark:bg-neutral-800 dark:text-neutral-400"
             }`}
           >
-            {citaCopied ? <Check className="w-3 h-3" /> : <ClipboardCopy className="w-3 h-3" />}
+            <span className="relative w-3 h-3">
+              <ClipboardCopy className={`w-3 h-3 absolute inset-0 transition-all duration-150 ${citaCopied ? "opacity-0 scale-75" : "opacity-100 scale-100"}`} />
+              <Check className={`w-3 h-3 absolute inset-0 transition-all duration-150 ${citaCopied ? "opacity-100 scale-100" : "opacity-0 scale-75"}`} />
+            </span>
             {citaCopied ? "Copiado" : "Citar"}
           </button>
           {item.metadatos?.resolucion && (
