@@ -82,6 +82,7 @@ export default function SearchClient() {
   // Estado del panel de lectura
   const [selectedItem, setSelectedItem] = useState<ResolutionItem | null>(null);
   const [overlayOpen, setOverlayOpen] = useState(false);
+  const [overlayClosing, setOverlayClosing] = useState(false);
 
   const inputRef = useRef<HTMLInputElement>(null);
   const historyRef = useRef<HTMLDivElement>(null);
@@ -108,6 +109,14 @@ export default function SearchClient() {
     });
   }, [debouncedQuery, yearFrom, yearTo, selectedDescriptores, selectedResultados, selectedTipos, page]);
 
+  const closeOverlay = useCallback(() => {
+    setOverlayClosing(true);
+    setTimeout(() => {
+      setOverlayOpen(false);
+      setOverlayClosing(false);
+    }, 180);
+  }, []);
+
   // Atajos de teclado: / para enfocar búsqueda, Esc para cerrar panel o limpiar consulta
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
@@ -116,8 +125,8 @@ export default function SearchClient() {
         inputRef.current?.focus();
       }
       if (e.key === "Escape") {
-        if (overlayOpen) {
-          setOverlayOpen(false);
+        if (overlayOpen && !overlayClosing) {
+          closeOverlay();
         } else if (document.activeElement === inputRef.current && query) {
           setQuery("");
         }
@@ -129,7 +138,7 @@ export default function SearchClient() {
     };
     document.addEventListener("keydown", handler);
     return () => document.removeEventListener("keydown", handler);
-  }, [overlayOpen, query]);
+  }, [overlayOpen, overlayClosing, closeOverlay, query]);
 
   const availableYears = useMemo(() => {
     const years = new Set<number>();
@@ -249,8 +258,6 @@ export default function SearchClient() {
     setSelectedItem(item);
     setOverlayOpen(true);
   }, []);
-
-  const closeOverlay = useCallback(() => setOverlayOpen(false), []);
 
   // Abrir directamente una resolución vía hash (#abrir=572-2024), p.ej. desde el grafo de citas
   useEffect(() => {
@@ -513,6 +520,7 @@ export default function SearchClient() {
           selectedDescriptores={selectedDescriptores}
           onClose={closeOverlay}
           onOpenItem={openItem}
+          closing={overlayClosing}
         />
       )}
     </>

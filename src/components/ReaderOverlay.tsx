@@ -39,7 +39,8 @@ export function ReaderOverlay({
   selectedDescriptores,
   onClose,
   onOpenItem,
-}: ReaderOverlayProps) {
+  closing = false,
+}: ReaderOverlayProps & { closing?: boolean }) {
   const [citaCopied, setCitaCopied] = useState(false);
   const panelRef = React.useRef<HTMLDivElement>(null);
 
@@ -97,13 +98,13 @@ export function ReaderOverlay({
 
   return createPortal(
     <div
-      className="fixed inset-0 z-50 flex justify-end animate-overlay"
+      className={`fixed inset-0 z-50 flex justify-end ${closing ? "animate-overlay-out" : "animate-overlay"}`}
       style={{ background: "rgba(23, 23, 40, 0.4)", backdropFilter: "blur(2px)" }}
       onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
     >
       <div
         ref={panelRef}
-        className="w-[min(720px,94vw)] h-full overflow-y-auto bg-white dark:bg-neutral-950 border-l border-neutral-200 dark:border-neutral-800 animate-slide-in-right"
+        className={`w-[min(720px,94vw)] h-full overflow-y-auto bg-white dark:bg-neutral-950 border-l border-neutral-200 dark:border-neutral-800 ${closing ? "animate-slide-out-right" : "animate-slide-in-right"}`}
         style={{ scrollbarWidth: "thin" }}
       >
         {/* Barra superior */}
@@ -127,7 +128,10 @@ export function ReaderOverlay({
                 : "border-neutral-200/80 bg-white text-neutral-600 hover:border-neutral-300 dark:border-neutral-700/80 dark:bg-neutral-800 dark:text-neutral-400"
             }`}
           >
-            {citaCopied ? <Check className="w-3 h-3" /> : <ClipboardCopy className="w-3 h-3" />}
+            <span className="relative w-3 h-3">
+              <ClipboardCopy className={`w-3 h-3 absolute inset-0 transition-all duration-150 ${citaCopied ? "opacity-0 scale-75" : "opacity-100 scale-100"}`} />
+              <Check className={`w-3 h-3 absolute inset-0 transition-all duration-150 ${citaCopied ? "opacity-100 scale-100" : "opacity-0 scale-75"}`} />
+            </span>
             {citaCopied ? "Copiado" : "Citar"}
           </button>
           {item.metadatos?.resolucion && (
