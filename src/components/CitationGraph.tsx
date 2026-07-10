@@ -43,16 +43,22 @@ interface GraphLink {
 
 // Construye nodos y aristas a partir de las resoluciones cargadas
 function buildGraphData(items: ResolutionItem[]) {
+  // Clave sin ceros a la izquierda: algunas citas vienen como "48-2018"
+  // pero la resolución está indexada como "048-2018".
+  const norm = (s: string) => s.replace(/^0+/, "");
   const resByNum = new Map<string, ResolutionItem>();
   items.forEach((item) => {
     const num = item.metadatos?.resolucion;
-    if (num) resByNum.set(num, item);
+    if (num) resByNum.set(norm(num), item);
   });
+  // Resuelve una cita a su número canónico indexado (o la deja igual si es externa)
+  const canon = (c: string) => resByNum.get(norm(c))?.metadatos?.resolucion ?? c;
 
   const citedCount = new Map<string, number>();
   items.forEach((item) => {
     item.metadatos?.resoluciones_citadas?.forEach((cited) => {
-      citedCount.set(cited, (citedCount.get(cited) || 0) + 1);
+      const key = canon(cited);
+      citedCount.set(key, (citedCount.get(key) || 0) + 1);
     });
   });
 
@@ -66,10 +72,10 @@ function buildGraphData(items: ResolutionItem[]) {
   items.forEach((item) => {
     const num = item.metadatos?.resolucion;
     if (!num) return;
-    const cited = [...new Set(item.metadatos?.resoluciones_citadas ?? [])].filter((c) => c !== num);
+    const cited = [...new Set((item.metadatos?.resoluciones_citadas ?? []).map(canon))].filter((c) => c !== num);
     citesTotal.set(num, cited.length);
     cited.forEach((c) => {
-      if (!resByNum.has(c)) return; // citada externa / no indexada → fuera del grafo
+      if (!resByNum.has(norm(c))) return; // citada externa / no indexada → fuera del grafo
       const key = `${num}__${c}`;
       if (linkSeen.has(key)) return; // evita aristas duplicadas
       linkSeen.add(key);
@@ -82,7 +88,7 @@ function buildGraphData(items: ResolutionItem[]) {
 
   const nodes: GraphNode[] = [];
   nodeIds.forEach((num) => {
-    const item = resByNum.get(num);
+    const item = resByNum.get(norm(num));
     if (!item) return;
     const resultado = item.metadatos?.resultado ?? "otro";
     nodes.push({
@@ -316,7 +322,13 @@ export default function CitationGraph() {
         e.preventDefault();
         searchInputRef.current?.focus();
       }
-      if (e.key === "Escape" && query) setQuery("");
+      if (e.key === "Escape" && query) {
+        // Mismo reset completo que el botón de limpiar
+        setQuery("");
+        setSelectedNode(null);
+        setHighlightNodes(new Set());
+        setHighlightLinks(new Set());
+      }
     };
     document.addEventListener("keydown", handler);
     return () => document.removeEventListener("keydown", handler);

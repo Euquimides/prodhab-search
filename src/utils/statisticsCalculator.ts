@@ -32,26 +32,11 @@ export interface DataRecord {
   vector?: number[];
 }
 
-export interface DatasetMetadata {
-  titulo: string;
-  descripcion: string;
-  publicador: string;
-  fecha_generacion: string;
-  licencia: string;
-  idioma: string;
-  formato: string;
-  total_registros: number;
-  modelo_embedding?: string;
-  dimension_embedding?: number;
-  modelo_ia_utilizado?: string; // campo heredado
-}
-
 export interface Dataset {
-  metadatos: DatasetMetadata;
   datos: DataRecord[];
 }
 
-export interface BasicStats {
+interface BasicStats {
   min: number;
   max: number;
   mean: number;
@@ -59,18 +44,11 @@ export interface BasicStats {
   stddev: number;
 }
 
-export interface VectorDimensionStats {
-  dimension: number;
-  min: number;
-  max: number;
-  mean: number;
-  median: number;
-}
-
 export interface Cluster {
   id: number;
-  centroid: number[];
-  members: number[];
+  // centroid y members se omiten en el JSON precomputado (scripts/generate-stats.mjs)
+  centroid?: number[];
+  members?: number[];
   size: number;
 }
 
@@ -80,14 +58,14 @@ export interface ScatterPoint {
   expediente: string;
   resolucion: string;
   clusterId: number;
-  recordIndex: number;
+  recordIndex?: number;
 }
 
 export interface ClusterAnalysis {
   numClusters: number;
   clusters: Cluster[];
   outlierCount: number;
-  outlierIndices: number[];
+  outlierIndices?: number[];
   mostPopulated: { clusterId: number; size: number };
   leastPopulated: { clusterId: number; size: number };
   clusterDistributionOverTime: { [year: string]: { [clusterId: string]: number } };
@@ -97,35 +75,11 @@ export interface ClusterAnalysis {
 export interface DatasetStatistics {
   totalRecords: number;
   uniqueExpedientes: number;
-  uniqueResoluciones: number;
   recordsPerYear: { [year: string]: number };
   earliestDate: string | null;
   latestDate: string | null;
-  recordsPerSourceFile: { [source: string]: number };
-  languageDistribution: { [lang: string]: number };
-  licenseDistribution: { [license: string]: number };
-  missingMetadata: {
-    expediente: number;
-    resolucion: number;
-    fecha: number;
-    vector: number;
-    archivoOrigen: number;
-    denunciante: number;
-    recursoDisponible: number;
-    elaboradoPor: number;
-    secciones: number;
-  };
   recursoDisponibleDistribution: { [recurso: string]: number };
   resultadoDistribution: { [resultado: string]: number };
-  tipoProcedimientoDistribution: { [tipo: string]: number };
-  firmantesTop: { firmante: string; count: number }[];
-  vectorLengthStats: BasicStats | null;
-  vectorNormStats: BasicStats | null;
-  vectorDimensionStats: VectorDimensionStats[];
-  vectorValueDistribution: {
-    overall: { min: number; max: number; mean: number; stddev: number };
-    histogram: { bin: string; count: number }[];
-  } | null;
   clusterAnalysis: ClusterAnalysis | null;
 }
 
@@ -150,6 +104,10 @@ function getYearFromDate(dateStr: string): string | null {
   return date ? date.getFullYear().toString() : null;
 }
 
+function toIsoDate(d: Date): string {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
+
 function calculateBasicStats(values: number[]): BasicStats {
   if (values.length === 0) {
     return { min: 0, max: 0, mean: 0, median: 0, stddev: 0 };
@@ -171,10 +129,6 @@ function calculateBasicStats(values: number[]): BasicStats {
   const stddev = Math.sqrt(variance);
   
   return { min, max, mean, median, stddev };
-}
-
-function calculateVectorNorm(vector: number[]): number {
-  return Math.sqrt(vector.reduce((sum, v) => sum + v * v, 0));
 }
 
 function euclideanDistance(a: number[], b: number[]): number {
@@ -367,195 +321,56 @@ function detectOutliers(
 }
 
 export function calculateStatistics(dataset: Dataset): DatasetStatistics {
-  const { metadatos, datos } = dataset;
-  
-  // Conteos básicos
-  const totalRecords = datos.length;
-  
-  // Seguimiento de valores únicos
-  const expedientes = new Set<string>();
-  const resoluciones = new Set<string>();
-  const recordsPerYear: { [year: string]: number } = {};
-  const recordsPerSourceFile: { [source: string]: number } = {};
-  
-  // Conteo de metadatos faltantes
-  const missingMetadata = {
-    expediente: 0,
-    resolucion: 0,
-    fecha: 0,
-    vector: 0,
-    archivoOrigen: 0,
-    denunciante: 0,
-    recursoDisponible: 0,
-    elaboradoPor: 0,
-    secciones: 0,
-  };
+  const { datos } = dataset;
 
+  const totalRecords = datos.length;
+  const expedientes = new Set<string>();
+  const recordsPerYear: { [year: string]: number } = {};
   const recursoDisponibleDistribution: { [recurso: string]: number } = {};
   const resultadoDistribution: { [resultado: string]: number } = {};
-  const tipoProcedimientoDistribution: { [tipo: string]: number } = {};
-  const firmanteCounts: { [firmante: string]: number } = {};
-  
-  // Seguimiento de fechas
+
   let earliestDate: Date | null = null;
   let latestDate: Date | null = null;
-  
-  // Estadísticas de vectores
-  const vectorLengths: number[] = [];
-  const vectorNorms: number[] = [];
+
   const allVectors: number[][] = [];
   const recordDates: (string | null)[] = [];
   const vectorToRecordMap: number[] = []; // Mapea índice de vector al índice del registro original
-  
-  // Procesa cada registro
+
   for (let recordIdx = 0; recordIdx < datos.length; recordIdx++) {
     const record = datos[recordIdx];
     const meta = record.metadatos || {};
-    
-    // Expediente
-    if (meta.expediente) {
-      expedientes.add(meta.expediente);
-    } else {
-      missingMetadata.expediente++;
-    }
-    
-    // Resolución
-    if (meta.resolucion) {
-      resoluciones.add(meta.resolucion);
-    } else {
-      missingMetadata.resolucion++;
-    }
-    
+
+    if (meta.expediente) expedientes.add(meta.expediente);
+
     // Fecha
     if (meta.fecha) {
       const date = parseDate(meta.fecha);
       const year = getYearFromDate(meta.fecha);
       recordDates.push(year);
-      
+
       if (date) {
-        if (!earliestDate || date < earliestDate) {
-          earliestDate = date;
-        }
-        if (!latestDate || date > latestDate) {
-          latestDate = date;
-        }
-        
-        if (year) {
-          recordsPerYear[year] = (recordsPerYear[year] || 0) + 1;
-        }
+        if (!earliestDate || date < earliestDate) earliestDate = date;
+        if (!latestDate || date > latestDate) latestDate = date;
+        if (year) recordsPerYear[year] = (recordsPerYear[year] || 0) + 1;
       }
     } else {
-      missingMetadata.fecha++;
       recordDates.push(null);
     }
-    
-    // Archivo origen
-    if (meta.archivo_origen) {
-      const parts = meta.archivo_origen.split('/');
-      const filename = parts[parts.length - 1] || meta.archivo_origen;
-      recordsPerSourceFile[filename] = (recordsPerSourceFile[filename] || 0) + 1;
-    } else {
-      missingMetadata.archivoOrigen++;
-    }
 
-    // Resultado
     if (meta.resultado) {
       resultadoDistribution[meta.resultado] = (resultadoDistribution[meta.resultado] || 0) + 1;
     }
 
-    // Tipo de procedimiento
-    if (meta.tipo_procedimiento) {
-      tipoProcedimientoDistribution[meta.tipo_procedimiento] = (tipoProcedimientoDistribution[meta.tipo_procedimiento] || 0) + 1;
-    }
-
-    // Firmante
-    if (meta.firmante) {
-      firmanteCounts[meta.firmante] = (firmanteCounts[meta.firmante] || 0) + 1;
-    }
-
-    // Denunciante
-    if (!meta.denunciante) {
-      missingMetadata.denunciante++;
-    }
-
-    // Recurso disponible
     if (meta.recurso_disponible) {
       recursoDisponibleDistribution[meta.recurso_disponible] = (recursoDisponibleDistribution[meta.recurso_disponible] || 0) + 1;
-    } else {
-      missingMetadata.recursoDisponible++;
     }
 
-    // Elaborado por
-    if (!meta.elaborado_por) {
-      missingMetadata.elaboradoPor++;
-    }
-
-    // Secciones
-    if (!record.secciones) {
-      missingMetadata.secciones++;
-    }
-
-    // Vector
     if (record.vector && Array.isArray(record.vector) && record.vector.length > 0) {
-      vectorLengths.push(record.vector.length);
-      vectorNorms.push(calculateVectorNorm(record.vector));
       allVectors.push(record.vector);
       vectorToRecordMap.push(recordIdx);
-    } else {
-      missingMetadata.vector++;
     }
   }
-  
-  // Calcula estadísticas de los vectores
-  let vectorLengthStats: BasicStats | null = null;
-  let vectorNormStats: BasicStats | null = null;
-  let vectorDimensionStats: VectorDimensionStats[] = [];
-  let vectorValueDistribution: { overall: BasicStats; histogram: { bin: string; count: number }[] } | null = null;
-  
-  if (allVectors.length > 0) {
-    vectorLengthStats = calculateBasicStats(vectorLengths);
-    vectorNormStats = calculateBasicStats(vectorNorms);
-    
-    // Estadísticas por dimensión (muestra las primeras dimensiones y el patrón general)
-    const numDimensions = allVectors[0].length;
-    const dimensionsToShow = Math.min(10, numDimensions); // Mostrar las primeras 10 dimensiones
-    
-    for (let d = 0; d < dimensionsToShow; d++) {
-      const dimValues = allVectors.map(v => v[d]);
-      const stats = calculateBasicStats(dimValues);
-      vectorDimensionStats.push({
-        dimension: d,
-        ...stats,
-      });
-    }
-    
-    // Distribución general de valores de los vectores
-    const allValues = allVectors.flat();
-    const overallStats = calculateBasicStats(allValues);
-    
-    // Crea los intervalos del histograma
-    const numBins = 20;
-    const range = overallStats.max - overallStats.min;
-    let histogram: { bin: string; count: number }[] = [];
-    if (range === 0) {
-      // Todos los valores son iguales, crea un solo intervalo
-      const singleValue = overallStats.min;
-      const count = allValues.length;
-      const binLabel = `${singleValue.toFixed(2)}`;
-      histogram.push({ bin: binLabel, count });
-    } else {
-      const binWidth = range / numBins;
-      for (let i = 0; i < numBins; i++) {
-        const binStart = overallStats.min + i * binWidth;
-        const binEnd = binStart + binWidth;
-        const binLabel = `${binStart.toFixed(2)} to ${binEnd.toFixed(2)}`;
-        const count = allValues.filter(v => v >= binStart && (i === numBins - 1 ? v <= binEnd : v < binEnd)).length;
-        histogram.push({ bin: binLabel, count });
-      }
-    }
-    vectorValueDistribution = { overall: overallStats, histogram };
-  }
-  
+
   // Análisis de agrupamiento
   let clusterAnalysis: ClusterAnalysis | null = null;
   
@@ -637,40 +452,15 @@ export function calculateStatistics(dataset: Dataset): DatasetStatistics {
     };
   }
   
-  // Top firmantes
-  const firmantesTop = Object.entries(firmanteCounts)
-    .map(([firmante, count]) => ({ firmante, count }))
-    .sort((a, b) => b.count - a.count)
-    .slice(0, 10);
-
-  // Distribución de idioma y licencia (desde los metadatos del conjunto de datos)
-  const languageDistribution: { [lang: string]: number } = {
-    [metadatos.idioma || 'unknown']: totalRecords,
-  };
-  
-  const licenseDistribution: { [license: string]: number } = {
-    [metadatos.licencia || 'unknown']: totalRecords,
-  };
-  
   return {
     totalRecords,
     uniqueExpedientes: expedientes.size,
-    uniqueResoluciones: resoluciones.size,
     recordsPerYear,
-    earliestDate: earliestDate ? earliestDate.toLocaleDateString('es-CR') : null,
-    latestDate: latestDate ? latestDate.toLocaleDateString('es-CR') : null,
-    recordsPerSourceFile,
-    languageDistribution,
-    licenseDistribution,
-    missingMetadata,
-    vectorLengthStats,
-    vectorNormStats,
-    vectorDimensionStats,
-    vectorValueDistribution,
+    // ISO YYYY-MM-DD (fecha local, sin pasar por UTC): la página extrae el año con slice(0, 4)
+    earliestDate: earliestDate ? toIsoDate(earliestDate) : null,
+    latestDate: latestDate ? toIsoDate(latestDate) : null,
     clusterAnalysis,
     recursoDisponibleDistribution,
     resultadoDistribution,
-    tipoProcedimientoDistribution,
-    firmantesTop,
   };
 }

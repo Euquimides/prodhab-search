@@ -149,16 +149,27 @@ export default function SearchClient() {
     return Array.from(years).sort();
   }, [allItems]);
 
+  // Con filtros activos la lista funciona aunque no haya consulta de texto
+  const hasActiveFilters =
+    selectedDescriptores.length > 0 ||
+    selectedResultados.length > 0 ||
+    selectedTipos.length > 0 ||
+    yearFrom !== null ||
+    yearTo !== null;
+  const isSearching = debouncedQuery.length > 0 || hasActiveFilters;
+
   const dateFilteredResults = useMemo(() => {
-    if (!yearFrom && !yearTo) return searchResults;
-    return searchResults.filter((item) => {
+    // Sin consulta, los filtros operan sobre el corpus completo
+    const base = debouncedQuery ? searchResults : allItems;
+    if (!yearFrom && !yearTo) return base;
+    return base.filter((item) => {
       const y = item.metadatos?.anio;
       if (!y) return true;
       if (yearFrom && y < yearFrom) return false;
       if (yearTo && y > yearTo) return false;
       return true;
     });
-  }, [searchResults, yearFrom, yearTo]);
+  }, [searchResults, allItems, debouncedQuery, yearFrom, yearTo]);
 
   const descriptorCounts = useMemo(() => {
     const pool = debouncedQuery ? dateFilteredResults : allItems;
@@ -427,7 +438,7 @@ export default function SearchClient() {
       {/* Diseño lateral: barra + resultados */}
       <div className="max-w-[1320px] mx-auto px-4 sm:px-6 py-6">
         {/* Resumen de filtros activos */}
-        {query && (
+        {isSearching && (
           <p
             role="status"
             aria-live="polite"
@@ -435,7 +446,7 @@ export default function SearchClient() {
             className="text-xs text-neutral-500 dark:text-neutral-400 flex items-center flex-wrap gap-1.5 mb-4"
           >
             <strong className="text-neutral-900 dark:text-neutral-100">{tipoFilteredResults.length}</strong>
-            {" "}resolucion{tipoFilteredResults.length === 1 ? "" : "es"} para «{query}»
+            {" "}resolucion{tipoFilteredResults.length === 1 ? "" : "es"} {query ? <>para «{query}»</> : "con los filtros:"}
             {(yearFrom || yearTo) && (
               <span className="bg-blue-100/70 rounded-md px-1.5 py-0.5 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300 font-medium">
                 {yearFrom ?? "…"}–{yearTo ?? "…"}
@@ -483,7 +494,7 @@ export default function SearchClient() {
               setSelectedResultados={setSelectedResultados}
               selectedTipos={selectedTipos}
               setSelectedTipos={setSelectedTipos}
-              isSearching={debouncedQuery.length > 0}
+              isSearching={isSearching}
             />
           </aside>
 
@@ -492,11 +503,8 @@ export default function SearchClient() {
             <SearchResults
               query={debouncedQuery}
               limit={limit}
-              similarityThreshold={similarityThreshold}
-              relatedLimit={relatedLimit}
-              filteredItems={debouncedQuery.length > 0 ? tipoFilteredResults : allItems}
-              isSearching={debouncedQuery.length > 0}
-              useFlexSearch={debouncedQuery.length > 0}
+              filteredItems={isSearching ? tipoFilteredResults : allItems}
+              isSearching={isSearching}
               highlightEnabled={highlightEnabled}
               selectedDescriptores={selectedDescriptores}
               page={page}
@@ -513,13 +521,17 @@ export default function SearchClient() {
         <ReaderOverlay
           item={selectedItem}
           query={debouncedQuery}
-          allItems={debouncedQuery.length > 0 ? tipoFilteredResults : allItems}
+          allItems={isSearching ? tipoFilteredResults : allItems}
           similarityThreshold={similarityThreshold}
           relatedLimit={relatedLimit}
           highlightEnabled={highlightEnabled}
           selectedDescriptores={selectedDescriptores}
           onClose={closeOverlay}
           onOpenItem={openItem}
+          onSelectDescriptor={(d) => {
+            setSelectedDescriptores((prev) => (prev.includes(d) ? prev : [...prev, d]));
+            closeOverlay();
+          }}
           closing={overlayClosing}
         />
       )}
