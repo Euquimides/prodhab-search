@@ -15,12 +15,9 @@ import {
 import { Bar, Scatter, Doughnut } from "react-chartjs-2";
 import Footer from "@/components/Footer";
 import { SiteHeader } from "@/components/SiteHeader";
-import {
-  calculateStatistics,
-  DatasetStatistics,
-  Dataset,
-} from "@/utils/statisticsCalculator";
+import { DatasetStatistics } from "@/utils/statisticsCalculator";
 import { RESULTADO_LABELS } from "@/context/SearchContext";
+import { useIsDark } from "@/utils/hooks";
 
 ChartJS.register(
   CategoryScale,
@@ -82,30 +79,17 @@ export default function EstadisticasPage() {
   const [stats, setStats] = useState<DatasetStatistics | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [isDark, setIsDark] = useState(false);
-
-  useEffect(() => {
-    const update = () =>
-      setIsDark(document.documentElement.classList.contains("dark"));
-    update();
-    const observer = new MutationObserver(update);
-    observer.observe(document.documentElement, {
-      attributes: true,
-      attributeFilter: ["class"],
-    });
-    return () => observer.disconnect();
-  }, []);
+  const isDark = useIsDark();
 
   const loadData = useCallback(async () => {
     try {
       setLoading(true);
-      const response = await fetch("/indice-resoluciones-prodhab.json");
+      // Estadísticas precomputadas en build (scripts/generate-stats.mjs)
+      const response = await fetch("/estadisticas.json");
       if (!response.ok) {
         throw new Error("Error al cargar los datos");
       }
-      const dataset: Dataset = await response.json();
-      const calculatedStats = calculateStatistics(dataset);
-      setStats(calculatedStats);
+      setStats((await response.json()) as DatasetStatistics);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Error desconocido");
     } finally {
@@ -123,7 +107,7 @@ export default function EstadisticasPage() {
         <div className="text-center">
           <div className="h-12 w-12 animate-spin rounded-full border-4 border-neutral-200 border-t-blue-600 dark:border-neutral-700 dark:border-t-blue-400 mx-auto mb-4"></div>
           <p className="text-neutral-600 dark:text-neutral-400">
-            Calculando estadísticas, esto puede tardar unos segundos...
+            Cargando estadísticas...
           </p>
         </div>
       </div>
@@ -374,13 +358,13 @@ export default function EstadisticasPage() {
                 {stats.clusterAnalysis.numClusters} grupos temáticos
               </strong>
               , el mayor con{" "}
-              {stats.clusterAnalysis.mostPopulated.size.toLocaleString()}{" "}
+              {stats.clusterAnalysis.mostPopulated.size.toLocaleString("es-CR")}{" "}
               resoluciones y el menor con{" "}
-              {stats.clusterAnalysis.leastPopulated.size.toLocaleString()}.
+              {stats.clusterAnalysis.leastPopulated.size.toLocaleString("es-CR")}.
               {stats.clusterAnalysis.outlierCount > 0 && (
                 <>
                   {" "}
-                  {stats.clusterAnalysis.outlierCount.toLocaleString()}{" "}
+                  {stats.clusterAnalysis.outlierCount.toLocaleString("es-CR")}{" "}
                   resoluciones no encajaron en ningún grupo con claridad.
                 </>
               )}{" "}
@@ -485,7 +469,7 @@ export default function EstadisticasPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {stats.clusterAnalysis.clusters
+                  {[...stats.clusterAnalysis.clusters]
                     .sort((a, b) => b.size - a.size)
                     .map((cluster) => {
                       const percentage = (
@@ -509,7 +493,7 @@ export default function EstadisticasPage() {
                             Grupo {cluster.id + 1}
                           </td>
                           <td className="py-2 px-3 text-right text-neutral-700 dark:text-neutral-300">
-                            {cluster.size.toLocaleString()}
+                            {cluster.size.toLocaleString("es-CR")}
                           </td>
                           <td className="py-2 px-3 text-right text-neutral-700 dark:text-neutral-300">
                             {percentage}%

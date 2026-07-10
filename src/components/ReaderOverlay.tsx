@@ -1,21 +1,12 @@
 "use client";
 import React, { useEffect, useCallback, useState } from "react";
 import { createPortal } from "react-dom";
-import { X, ClipboardCopy, Check, Calendar, Building2, User, Share2, ExternalLink } from "lucide-react";
+import { X, ClipboardCopy, Check, Calendar, Building2, User, Share2, ExternalLink, Link2 } from "lucide-react";
 import Link from "next/link";
-import { ResolutionItem, RESULTADO_LABELS, TIPO_LABELS, ResultadoType, DESCRIPTOR_LABELS } from "@/context/SearchContext";
+import { ResolutionItem, RESULTADO_LABELS, RESULTADO_BADGE_CLASSES, TIPO_LABELS, DESCRIPTOR_LABELS, useSearchIndex } from "@/context/SearchContext";
 import { findMostSimilar } from "@/utils/semanticSimilarity";
 import { highlightText, buildQueryPatterns } from "@/utils/highlightText";
 import { formatCitaCR, fmtFecha, parseResolutionText, splitIntoParagraphs } from "@/utils/formatters";
-
-const RESULTADO_COLORS: Record<string, string> = {
-  con_lugar: "border-emerald-500 bg-emerald-50 text-emerald-700 dark:bg-emerald-900/20 dark:text-emerald-300 dark:border-emerald-700",
-  parcialmente_con_lugar: "border-amber-500 bg-amber-50 text-amber-700 dark:bg-amber-900/20 dark:text-amber-300 dark:border-amber-700",
-  sin_lugar: "border-red-400 bg-red-50 text-red-700 dark:bg-red-900/20 dark:text-red-300 dark:border-red-700",
-  archivado: "border-neutral-400 bg-neutral-100 text-neutral-600 dark:bg-neutral-800 dark:text-neutral-400 dark:border-neutral-600",
-  rechazo_de_plano: "border-orange-400 bg-orange-50 text-orange-700 dark:bg-orange-900/20 dark:text-orange-300 dark:border-orange-700",
-  otro: "border-blue-400 bg-blue-50 text-blue-700 dark:bg-blue-900/20 dark:text-blue-300 dark:border-blue-700",
-};
 
 interface ReaderOverlayProps {
   item: ResolutionItem;
@@ -27,6 +18,7 @@ interface ReaderOverlayProps {
   selectedDescriptores: string[];
   onClose: () => void;
   onOpenItem: (item: ResolutionItem) => void;
+  onSelectDescriptor?: (descriptor: string) => void;
 }
 
 export function ReaderOverlay({
@@ -39,10 +31,25 @@ export function ReaderOverlay({
   selectedDescriptores,
   onClose,
   onOpenItem,
+  onSelectDescriptor,
   closing = false,
 }: ReaderOverlayProps & { closing?: boolean }) {
   const [citaCopied, setCitaCopied] = useState(false);
+  const [linkCopied, setLinkCopied] = useState(false);
   const panelRef = React.useRef<HTMLDivElement>(null);
+  // Corpus completo (no la lista filtrada de allItems) para resolver citas a otras resoluciones
+  const { allItems: corpus } = useSearchIndex();
+
+  // Mapa n.° de resolución → item, con ceros a la izquierda normalizados
+  // (las citas a veces vienen como "48-2018" y el índice tiene "048-2018")
+  const byResolucion = React.useMemo(() => {
+    const m = new Map<string, ResolutionItem>();
+    for (const it of corpus) {
+      const n = it.metadatos?.resolucion;
+      if (n) m.set(n.replace(/^0+/, ""), it);
+    }
+    return m;
+  }, [corpus]);
 
   useEffect(() => {
     const h = (e: KeyboardEvent) => {
@@ -70,6 +77,16 @@ export function ReaderOverlay({
     }).catch(() => {});
   }, [item]);
 
+  // Enlace permanente: la página principal abre la resolución vía #abrir=<n.° de resolución>
+  const copiarEnlace = useCallback(() => {
+    const res = item.metadatos?.resolucion;
+    if (!res) return;
+    navigator.clipboard.writeText(`${window.location.origin}/#abrir=${res}`).then(() => {
+      setLinkCopied(true);
+      setTimeout(() => setLinkCopied(false), 2000);
+    }).catch(() => {});
+  }, [item]);
+
   const queryPatterns = React.useMemo(
     () => (highlightEnabled ? buildQueryPatterns(query) : []),
     [query, highlightEnabled],
@@ -86,7 +103,7 @@ export function ReaderOverlay({
       item.vector,
       allItems.filter((i) => i.id !== item.id),
       relatedLimit,
-      similarityThreshold,
+      0.5, // diversityFactor fijo; el slider de precisión solo controla el umbral
       similarityThreshold,
     );
   }, [item, allItems, relatedLimit, similarityThreshold]);
@@ -94,7 +111,7 @@ export function ReaderOverlay({
   const parsedSections = React.useMemo(() => parseResolutionText(item.texto, item.secciones), [item.texto, item.secciones]);
 
   const resultado = item.metadatos?.resultado;
-  const badgeColor = resultado ? (RESULTADO_COLORS[resultado] ?? RESULTADO_COLORS.otro) : RESULTADO_COLORS.otro;
+  const badgeColor = RESULTADO_BADGE_CLASSES[resultado ?? "otro"] ?? RESULTADO_BADGE_CLASSES.otro;
 
   return createPortal(
     <div
@@ -134,6 +151,23 @@ export function ReaderOverlay({
             </span>
             {citaCopied ? "Copiado" : "Citar"}
           </button>
+          {item.metadatos?.resolucion && (
+            <button
+              onClick={copiarEnlace}
+              title={linkCopied ? "¡Enlace copiado!" : "Copiar enlace a esta resolución"}
+              className={`inline-flex items-center gap-1.5 border rounded-lg px-3 py-1.5 text-xs font-medium transition-all ${
+                linkCopied
+                  ? "border-emerald-300 bg-emerald-50 text-emerald-700 dark:border-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300"
+                  : "border-neutral-200/80 bg-white text-neutral-600 hover:border-neutral-300 dark:border-neutral-700/80 dark:bg-neutral-800 dark:text-neutral-400"
+              }`}
+            >
+              <span className="relative w-3 h-3">
+                <Link2 className={`w-3 h-3 absolute inset-0 transition-all duration-150 ${linkCopied ? "opacity-0 scale-75" : "opacity-100 scale-100"}`} />
+                <Check className={`w-3 h-3 absolute inset-0 transition-all duration-150 ${linkCopied ? "opacity-100 scale-100" : "opacity-0 scale-75"}`} />
+              </span>
+              {linkCopied ? "Copiado" : "Enlace"}
+            </button>
+          )}
           {item.metadatos?.resolucion && (
             <Link
               href={`/grafo/#res=${item.metadatos.resolucion}`}
@@ -241,9 +275,14 @@ export function ReaderOverlay({
               </div>
               <div className="flex flex-wrap gap-1.5">
                 {item.descriptores.map((d) => (
-                  <span key={d} className="text-[11px] font-medium text-neutral-500 dark:text-neutral-400 border border-neutral-200/80 dark:border-neutral-700/80 rounded-md px-2 py-0.5 hover:border-blue-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors cursor-default">
+                  <button
+                    key={d}
+                    onClick={() => onSelectDescriptor?.(d)}
+                    title={`Filtrar resoluciones por «${DESCRIPTOR_LABELS[d] ?? d}»`}
+                    className="text-[11px] font-medium text-neutral-500 dark:text-neutral-400 border border-neutral-200/80 dark:border-neutral-700/80 rounded-md px-2 py-0.5 hover:border-blue-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+                  >
                     {DESCRIPTOR_LABELS[d] ?? d}
-                  </span>
+                  </button>
                 ))}
               </div>
             </div>
@@ -259,11 +298,27 @@ export function ReaderOverlay({
                 <span className="flex-1 h-px bg-neutral-200/60 dark:bg-neutral-800/60" />
               </div>
               <div className="flex flex-wrap gap-1.5">
-                {item.metadatos.resoluciones_citadas.map((r) => (
-                  <span key={r} className="font-mono text-[11px] bg-neutral-100/80 dark:bg-neutral-800 rounded-md text-neutral-600 dark:text-neutral-400 px-2 py-0.5">
-                    {r}
-                  </span>
-                ))}
+                {item.metadatos.resoluciones_citadas.map((r) => {
+                  const cited = byResolucion.get(r.replace(/^0+/, ""));
+                  return cited && cited.id !== item.id ? (
+                    <button
+                      key={r}
+                      onClick={() => onOpenItem(cited)}
+                      title={`Abrir resolución ${cited.metadatos?.resolucion ?? r}`}
+                      className="font-mono text-[11px] bg-blue-50/80 dark:bg-blue-950/40 rounded-md text-blue-600 dark:text-blue-400 px-2 py-0.5 hover:bg-blue-100 dark:hover:bg-blue-900/50 hover:underline transition-colors"
+                    >
+                      {r}
+                    </button>
+                  ) : (
+                    <span
+                      key={r}
+                      title="No disponible en el índice (p. ej. jurisprudencia de la Sala Constitucional)"
+                      className="font-mono text-[11px] bg-neutral-100/80 dark:bg-neutral-800 rounded-md text-neutral-600 dark:text-neutral-400 px-2 py-0.5"
+                    >
+                      {r}
+                    </span>
+                  );
+                })}
               </div>
             </div>
           )}
@@ -296,7 +351,7 @@ export function ReaderOverlay({
                     </div>
                     <div className="flex items-center gap-2 mt-2">
                       {r.item.metadatos?.resultado && (
-                        <span className={`inline-flex items-center border rounded-md px-1.5 py-px text-[11px] font-medium uppercase ${RESULTADO_COLORS[r.item.metadatos.resultado] ?? RESULTADO_COLORS.otro}`}>
+                        <span className={`inline-flex items-center border rounded-md px-1.5 py-px text-[11px] font-medium uppercase ${RESULTADO_BADGE_CLASSES[r.item.metadatos.resultado] ?? RESULTADO_BADGE_CLASSES.otro}`}>
                           {RESULTADO_LABELS[r.item.metadatos.resultado]}
                         </span>
                       )}
