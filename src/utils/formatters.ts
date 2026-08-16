@@ -115,17 +115,22 @@ export function splitIntoParagraphs(text: string): string[] {
     .flatMap((p) => (p.length > 1200 ? groupSentences(p) : [p]));
 }
 
+// Marcadores de valor no disponible producidos por el pipeline de limpieza de datos
+// (public/indice-resoluciones-prodhab.json) para campos que no pudieron inferirse.
+const SIN_DATO = new Set(["No especificado", "Fecha no especificada"]);
+export const tieneDato = (v?: string | null): v is string => !!v && !SIN_DATO.has(v);
+
 export function formatCitaCR(item: ResolutionItem): string {
   const parts: string[] = ["Agencia de Protección de Datos de los Habitantes (PRODHAB)"];
   if (item.metadatos?.resolucion) parts.push(`Resolución N.° ${item.metadatos.resolucion}`);
   if (item.metadatos?.expediente) parts.push(`Expediente ${item.metadatos.expediente}`);
-  if (item.metadatos?.fecha) {
+  if (tieneDato(item.metadatos?.fecha)) {
     const d = new Date(item.metadatos.fecha + "T00:00:00");
-    const hora = item.metadatos.hora ?? null;
+    const hora = tieneDato(item.metadatos.hora) ? item.metadatos.hora : null;
     const fechaLarga = d.toLocaleDateString("es-CR", { day: "numeric", month: "long", year: "numeric" });
     parts.push(hora ? `de las ${hora} horas del ${fechaLarga}` : fechaLarga);
   }
-  if (item.metadatos?.lugar) parts.push(`${item.metadatos.lugar}, Costa Rica`);
+  if (tieneDato(item.metadatos?.lugar)) parts.push(`${item.metadatos.lugar}, Costa Rica`);
   return parts.join(", ") + ".";
 }
 

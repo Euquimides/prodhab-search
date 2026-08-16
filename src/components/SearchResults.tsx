@@ -70,7 +70,7 @@ const ResultCard = React.memo(function ResultCard({ item, index, highlight, onOp
         <div className="flex items-center gap-2 flex-wrap">
           {item.metadatos?.tipo_procedimiento && (
             <span className="border border-neutral-200/80 dark:border-neutral-700/80 rounded-md px-2 py-0.5 text-[11px] font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
-              {TIPO_LABELS[item.metadatos.tipo_procedimiento]}
+              {TIPO_LABELS[item.metadatos.tipo_procedimiento] ?? item.metadatos.tipo_procedimiento}
             </span>
           )}
           {item.descriptores && item.descriptores.slice(0, 3).map((d) => (

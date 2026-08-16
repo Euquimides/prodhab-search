@@ -24,8 +24,8 @@ PrivataSearch es un buscador de texto completo e inteligente de resoluciones emi
 
 1. Clona el repositorio:
 	```bash
-	git clone https://github.com/Euquimides/prodhab-search.git
-	cd prodhab-search
+	git clone https://github.com/Euquimides/privatasearch.git
+	cd privatasearch
 	```
 2. Instala las dependencias:
 	```bash
@@ -36,6 +36,10 @@ PrivataSearch es un buscador de texto completo e inteligente de resoluciones emi
 	npm run dev
 	```
 4. Abre [http://localhost:3000](http://localhost:3000) en tu navegador.
+5. Corre la suite de pruebas (vitest):
+	```bash
+	npm test
+	```
 
 ## Despliegue en GitHub Pages
 
@@ -44,9 +48,9 @@ El proyecto está configurado para exportar el sitio como estático y desplegarl
 ### Exportar el sitio manualmente
 ```bash
 npm run build
-npx serve out/privatasearch
+npx serve out
 ```
-Los archivos estáticos se generan en la carpeta `out/privatasearch`.
+Los archivos estáticos se generan en la carpeta `out`.
 
 ## Estructura del proyecto
 
@@ -75,14 +79,19 @@ src/
 ├── types/
 │   └── three-bloom.d.ts      — Tipos para efecto bloom de Three.js
 └── utils/
-    ├── semanticSimilarity.ts  — Similitud coseno y algoritmo MMR
+    ├── semanticSimilarity.ts  — Similitud coseno y algoritmo MMR (resoluciones relacionadas, usado en ReaderOverlay)
     ├── statisticsCalculator.ts — Cálculo de estadísticas del dataset
     ├── formatters.ts          — Parseo de secciones legales y formato de citas
     ├── hooks.ts               — Hooks personalizados (debounce, tema oscuro)
     └── highlightText.tsx      — Resaltado de términos en resultados
 
+scripts/
+├── generate-stats.mjs          — Precomputa public/estadisticas.json en el prebuild
+└── clean_prodhab_dataset.py    — Pipeline de limpieza del dataset de resoluciones
+
 public/
-└── indice-resoluciones-prodhab.json  — Índice de resoluciones
+├── indice-resoluciones-prodhab.json  — Índice de resoluciones
+└── estadisticas.json                 — Estadísticas precomputadas (generado, no editar a mano)
 ```
 
 ## Tecnologías utilizadas
