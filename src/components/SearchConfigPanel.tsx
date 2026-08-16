@@ -288,7 +288,7 @@ export function SearchConfigPanel({
           max={100}
           value={similarityThreshold * 100}
           onChange={(e) => setSimilarityThreshold(Number(e.target.value) / 100)}
-          className="h-2 w-full cursor-pointer appearance-none transition-all"
+          className="h-2 w-full cursor-pointer appearance-none transition-all [accent-color:var(--primary)]"
           style={{
             background: `linear-gradient(to right, var(--primary) 0%, var(--primary) ${similarityThreshold * 100}%, var(--slider-track-empty) ${similarityThreshold * 100}%, var(--slider-track-empty) 100%)`,
           }}

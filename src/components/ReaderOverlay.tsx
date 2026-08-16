@@ -6,7 +6,7 @@ import Link from "next/link";
 import { ResolutionItem, RESULTADO_LABELS, RESULTADO_BADGE_CLASSES, TIPO_LABELS, DESCRIPTOR_LABELS, useSearchIndex } from "@/context/SearchContext";
 import { findMostSimilar } from "@/utils/semanticSimilarity";
 import { highlightText, buildQueryPatterns } from "@/utils/highlightText";
-import { formatCitaCR, fmtFecha, parseResolutionText, splitIntoParagraphs } from "@/utils/formatters";
+import { formatCitaCR, fmtFecha, parseResolutionText, splitIntoParagraphs, tieneDato } from "@/utils/formatters";
 
 interface ReaderOverlayProps {
   item: ResolutionItem;
@@ -203,7 +203,7 @@ export function ReaderOverlay({
             )}
             {item.metadatos?.tipo_procedimiento && (
               <span className="inline-flex items-center border border-neutral-200/80 dark:border-neutral-700/80 rounded-md px-2 py-0.5 text-[11px] font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
-                {TIPO_LABELS[item.metadatos.tipo_procedimiento]}
+                {TIPO_LABELS[item.metadatos.tipo_procedimiento] ?? item.metadatos.tipo_procedimiento}
               </span>
             )}
           </div>
@@ -225,7 +225,7 @@ export function ReaderOverlay({
             </div>
             <div className="bg-white dark:bg-neutral-900 p-3 min-w-0">
               <div className="text-[11px] font-medium uppercase tracking-widest text-neutral-400 dark:text-neutral-500 mb-1">Fecha</div>
-              <div className="text-sm font-mono text-neutral-900 dark:text-neutral-100">{item.metadatos?.fecha ? fmtFecha(item.metadatos.fecha) : "—"}</div>
+              <div className="text-sm font-mono text-neutral-900 dark:text-neutral-100">{tieneDato(item.metadatos?.fecha) ? fmtFecha(item.metadatos.fecha) : "—"}</div>
             </div>
             <div className="bg-white dark:bg-neutral-900 p-3 min-w-0">
               <div className="text-[11px] font-medium uppercase tracking-widest text-neutral-400 dark:text-neutral-500 mb-1">Denunciado(a)</div>
@@ -234,7 +234,7 @@ export function ReaderOverlay({
           </div>
 
           {/* Firmante */}
-          {item.metadatos?.firmante && (
+          {tieneDato(item.metadatos?.firmante) && (
             <p className="flex items-center gap-1.5 text-xs text-neutral-400 dark:text-neutral-500 mb-6">
               <User className="w-3 h-3" />
               {item.metadatos.firmante}
