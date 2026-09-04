@@ -29,8 +29,11 @@ html {
   --slider-track-empty: oklch(0.28 0.006 250);
 }
 
-/* Las opciones del select nativo heredan el tema oscuro del SO */
-.dark select {
+/* Los controles nativos (select, checkbox, radio, date) heredan el tema oscuro del SO */
+.dark select,
+.dark input[type="checkbox"],
+.dark input[type="radio"],
+.dark input[type="date"] {
   color-scheme: dark;
 }
 
