@@ -48,6 +48,15 @@ export default function Footer() {
               ·
             </span>
             <Link
+              href="/formularios"
+              className="py-3 -my-3 sm:py-2 sm:-my-2 px-1 -mx-1 text-xs text-neutral-500 hover:underline dark:text-neutral-400"
+            >
+              Formularios
+            </Link>
+            <span className="hidden sm:inline text-neutral-300 dark:text-neutral-700">
+              ·
+            </span>
+            <Link
               href="/estadisticas"
               className="py-3 -my-3 sm:py-2 sm:-my-2 px-1 -mx-1 text-xs text-neutral-500 hover:underline dark:text-neutral-400"
             >

@@ -58,6 +58,21 @@ export default function DisclaimerPage() {
           </p>
 
           <h2 className="text-xl font-semibold text-neutral-900 dark:text-neutral-100 mt-8 mb-3">
+            Módulo de Formularios de Inscripción PRODHAB
+          </h2>
+          <p className="mb-6 text-neutral-700 dark:text-neutral-300">
+            La sección de formularios (<code>/formularios</code>) es un asistente de llenado, no el
+            trámite oficial ante PRODHAB. Los datos que usted ingrese se procesan únicamente en su
+            propio navegador: no se envían, transmiten ni almacenan en ningún servidor de
+            PrivataSearch ni de terceros. Al cerrar o recargar la pestaña, la información se pierde a
+            menos que usted la exporte. El botón "Borrar todo" limpia el progreso en cualquier momento.
+            El documento exportado (Word y, cuando esté disponible, PDF) es un borrador editable que
+            usted debe revisar y presentar por los canales oficiales de PRODHAB; PrivataSearch no
+            garantiza que su contenido coincida exactamente con el formulario oficial ni que el
+            trámite sea aceptado.
+          </p>
+
+          <h2 className="text-xl font-semibold text-neutral-900 dark:text-neutral-100 mt-8 mb-3">
             Cambios en el Descargo de Responsabilidad
           </h2>
           <p className="mb-6 text-neutral-700 dark:text-neutral-300">

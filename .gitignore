@@ -46,3 +46,8 @@ DESIGN.md
 
 # impeccable
 .impeccable/
+
+# formularios PRODHAB (docs internos + excels oficiales, no forman parte del build)
+BACKLOG-Formularios-Inscripcion-PRODHAB.md
+PRD-Formularios-Inscripcion-PRODHAB.md
+/forms/
