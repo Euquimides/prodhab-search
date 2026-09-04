@@ -7,7 +7,7 @@ const FORM_TYPES = [
   {
     href: "/formularios/personas-fisicas",
     title: "Persona física",
-    description: "Para personas que inscriben una base de datos a su propio nombre.",
+    description: "Para personas físicas que necesitan inscribir una base de datos a nombre propio.",
     icon: (
       <>
         <circle cx="12" cy="8" r="3.5" />
@@ -29,12 +29,13 @@ const FORM_TYPES = [
   },
   {
     href: "/formularios/organismos-publicos",
-    title: "Organismo público",
-    description: "Para instituciones del sector público, con secciones específicas del sector.",
+    title: "Organizaciones públicas",
+    description: "Para instituciones del sector público, con secciones específicas.",
     icon: (
       <>
-        <path d="M5 21V4" strokeLinecap="round" />
-        <path d="M5 4h13l-3 4 3 4H5" strokeLinejoin="round" />
+        <path d="M4 21h16" strokeLinecap="round" />
+        <path d="M5 21V10M9 21V10M15 21V10M19 21V10" strokeLinecap="round" />
+        <path d="M3 10l9-6 9 6" strokeLinejoin="round" />
       </>
     ),
   },
